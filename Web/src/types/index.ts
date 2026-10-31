@@ -21,6 +21,10 @@ export interface Pekon {
   latitude: number;
   longitude: number;
   namaBumdes?: string;
+  totalWarga?: number;
+  totalLoansApproved?: number;
+  avgCreditScore?: number;
+  stuntingRiskCount?: number;
 }
 
 export interface UserProfile {
@@ -99,6 +103,9 @@ export interface NutritionRedemption {
   userId: string;
   packageId: string;
   pointsSpent: number | string;
+  status?: "PENDING" | "VERIFIED_PICKED_UP";
+  beneficiaryName?: string;
+  toddlerAgeMonths?: number;
   user?: {
     fullName: string;
     phoneNumber: string;

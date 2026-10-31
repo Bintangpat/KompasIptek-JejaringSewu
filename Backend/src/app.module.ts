@@ -28,7 +28,6 @@ import { NotificationsModule } from './features/notifications/notifications.modu
     ThrottlerModule.forRoot([
       { name: 'short', ttl: 1000, limit: 10 },
       { name: 'medium', ttl: 60000, limit: 100 },
-      { name: 'otp_strict', ttl: 300000, limit: 3 },
     ]),
 
     // 3. BullMQ Asynchronous Processing

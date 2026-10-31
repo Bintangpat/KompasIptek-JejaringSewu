@@ -29,7 +29,7 @@ export class AuthController {
     res.cookie('jejaring_pringsewu', refreshToken, {
       httpOnly: true, // Anti-XSS
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       path: '/api/v1/auth',
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 Hari
     });
@@ -70,7 +70,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ otp_strict: { limit: 3, ttl: 300000 } })
+  @Throttle({ medium: { limit: 3, ttl: 300000 } })
   @Post('otp/send')
   @HttpCode(HttpStatus.OK)
   async sendOtp(@Body() dto: SendOtpDto) {
@@ -85,7 +85,7 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ otp_strict: { limit: 3, ttl: 300000 } })
+  @Throttle({ medium: { limit: 3, ttl: 300000 } })
   @Post('password/forgot')
   @HttpCode(HttpStatus.OK)
   async forgotPassword(@Body() dto: SendOtpDto) {

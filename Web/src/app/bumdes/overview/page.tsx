@@ -1,286 +1,283 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuth } from "@/context/auth-context";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { EconomicVelocityChart } from "@/components/charts/economic-velocity-chart";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Users,
-  ShieldCheck,
-  Coins,
-  HeartHandshake,
-  ArrowRight,
-  TrendingUp,
-  AlertCircle,
+  Wallet,
+  Scale,
+  Apple,
+  Camera,
+  ArrowUpRight,
+  ShieldAlert,
   CheckCircle2,
+  Clock,
 } from "lucide-react";
-import { formatRupiah, formatDate } from "@/lib/utils";
-import { apiClient } from "@/lib/api-client";
-import { MOCK_LOAN_RECOMMENDATIONS, MOCK_NUTRITION_PACKAGES, MOCK_USERS_PAGELARAN } from "@/lib/mock-data";
 
 export default function BumdesOverviewPage() {
-  const { user, isMockMode } = useAuth();
-  const [stats, setStats] = useState({
-    totalWarga: 1420,
-    verifiedWarga: 1285,
-    pendingLoansCount: 2,
-    activeNutritionStock: 125,
-  });
+  const { activePekon } = useAuth();
 
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    // Attempt to fetch fresh data if live server
-    const fetchFreshData = async () => {
-      if (isMockMode) return;
-      try {
-        setLoading(true);
-        const loansRes = await apiClient.get("/credit-scoring/loans/eligible");
-        const packagesRes = await apiClient.get("/nutrition/packages");
-
-        const eligibleLoans = loansRes.data || [];
-        const packages = packagesRes.data || [];
-
-        const totalStock = packages.reduce(
-          (sum: number, p: any) => sum + (p.stockCount || 0),
-          0
-        );
-
-        setStats((prev) => ({
-          ...prev,
-          pendingLoansCount: eligibleLoans.length,
-          activeNutritionStock: totalStock,
-        }));
-      } catch (e) {
-        // Fallback gracefully
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchFreshData();
-  }, [isMockMode]);
+  const recentTransactions = [
+    {
+      id: "TRX-7821",
+      modul: "Hasil Bumi",
+      warga: "Pak Slamet",
+      nominal: "Rp 850.000",
+      poin: "+15 Pts",
+      statusPoW: "VERIFIED_GEOTAG",
+      waktu: "10 menit lalu",
+    },
+    {
+      id: "TRX-7820",
+      modul: "Nebeng-Jastip",
+      warga: "Bu Rohmah",
+      nominal: "Rp 35.000",
+      poin: "+2 Pts",
+      statusPoW: "VERIFIED_GEOTAG",
+      waktu: "25 menit lalu",
+    },
+    {
+      id: "TRX-7819",
+      modul: "Mini-Job",
+      warga: "Mbah Suroto",
+      nominal: "Rp 75.000",
+      poin: "+5 Pts",
+      statusPoW: "VERIFIED_GEOTAG",
+      waktu: "1 jam lalu",
+    },
+    {
+      id: "TRX-7818",
+      modul: "Hasil Bumi",
+      warga: "Pak Teguh",
+      nominal: "Rp 1.200.000",
+      poin: "+20 Pts",
+      statusPoW: "PENDING_REVIEW",
+      waktu: "2 jam lalu",
+    },
+    {
+      id: "TRX-7817",
+      modul: "Paket Gizi",
+      warga: "Ibu Anisa (Balita)",
+      nominal: "Tukar 30 Poin",
+      poin: "-30 Pts",
+      statusPoW: "VERIFIED_GEOTAG",
+      waktu: "3 jam lalu",
+    },
+  ];
 
   return (
-    <DashboardLayout allowedRoles={["ADMIN_BUMDES", "SUPER_ADMIN"]}>
-      {/* Header Banner */}
-      <div className="bg-gradient-to-r from-emerald-800 to-teal-900 rounded-2xl p-6 lg:p-8 text-white shadow-lg relative overflow-hidden">
-        <div className="relative z-10 space-y-2">
-          <Badge className="bg-emerald-500/30 text-emerald-200 border-emerald-400/40 text-xs">
-            Portal Administrasi BUMDes
-          </Badge>
-          <h1 className="text-2xl lg:text-3xl font-bold tracking-tight">
-            Selamat Datang di {user?.pekon?.namaPekon || "Pekon Pagelaran"}
-          </h1>
-          <p className="text-emerald-100 text-sm max-w-2xl">
-            Sistem pengawasan perputaran ekonomi mandiri desa, validasi fisik NIK,
-            penyaluran modal ultra-mikro tanpa agunan (SPK AHP-TOPSIS), dan pemenuhan gizi balita stunting.
-          </p>
-        </div>
-      </div>
-
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Warga */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-medium text-slate-500">
-              Total Warga Terdaftar
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-blue-50 text-blue-600">
-              <Users className="w-4 h-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">
-              {stats.totalWarga.toLocaleString("id-ID")}
-            </div>
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-              <span>+14 warga baru minggu ini</span>
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* NIK Terverifikasi */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-medium text-slate-500">
-              Warga Tervalidasi NIK
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">
-              {stats.verifiedWarga.toLocaleString("id-ID")}
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              <span className="font-semibold text-emerald-600">90.5%</span> cakupan identitas terverifikasi
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Antrean Pinjaman Modal */}
-        <Card className="hover:shadow-md transition-shadow border-amber-200 bg-amber-50/20">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-medium text-slate-700">
-              Rekomendasi Modal Rp1.5M
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-amber-100 text-amber-700">
-              <Coins className="w-4 h-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-900">
-              {stats.pendingLoansCount} Warga
-            </div>
-            <p className="text-xs text-amber-700 font-medium mt-1">
-              Menunggu persetujuan BUMDes
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Stok Paket Gizi */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xs font-medium text-slate-500">
-              Stok Pangan Stunting
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-rose-50 text-rose-600">
-              <HeartHandshake className="w-4 h-4" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-slate-900">
-              {stats.activeNutritionStock} Paket
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              Tersedia di Posyandu & BUMDes
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Action Banners */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Action 1: Verifikasi NIK */}
-        <Card className="border-l-4 border-l-emerald-600 bg-white">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div className="space-y-1">
-              <h3 className="font-semibold text-slate-900 text-base">
-                Verifikasi Fisik KTP / NIK Warga
-              </h3>
-              <p className="text-xs text-slate-500 max-w-sm">
-                Periksa KTP asli warga pendaftar untuk mencocokkan hash kriptografi
-                dan mengaktifkan kelayakan bantuan & transaksi bursa panen.
-              </p>
-            </div>
-            <Link href="/bumdes/verifikasi-nik">
-              <Button size="sm" className="gap-2 shrink-0">
-                Buka Antrean <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        {/* Action 2: Pinjaman Modal */}
-        <Card className="border-l-4 border-l-amber-500 bg-white">
-          <CardContent className="p-6 flex items-center justify-between">
-            <div className="space-y-1">
-              <h3 className="font-semibold text-slate-900 text-base">
-                Persetujuan Modal Usaha Rp1.500.000
-              </h3>
-              <p className="text-xs text-slate-500 max-w-sm">
-                Tinjau warga Grade A ($S_{'{'}kredit{'}'} \ge 85$) hasil SPK AHP-TOPSIS
-                untuk persetujuan pencairan modal kerja tanpa agunan fisik.
-              </p>
-            </div>
-            <Link href="/bumdes/pinjaman-modal">
-              <Button size="sm" variant="default" className="bg-amber-600 hover:bg-amber-700 gap-2 shrink-0">
-                Tinjau Pinjaman <ArrowRight className="w-4 h-4" />
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Warga Activity Table Preview */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header Title Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <CardTitle>Warga Terdaftar Terkini di Pekon</CardTitle>
-            <p className="text-xs text-slate-500 mt-1">
-              Daftar rekam jejak warga terdaftar beserta status verifikasi NIK dan poin reputasi.
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              Overview Operasional BUMDes
+              <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/30 font-medium">
+                {activePekon.namaPekon}
+              </Badge>
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              Pantauan perputaran ekonomi sirkular, inklusi kerja, dan penyaluran nutrisi desa.
             </p>
           </div>
-          <Link href="/bumdes/verifikasi-nik">
-            <Button variant="outline" size="sm" className="text-xs gap-1.5">
-              Kelola Semua Warga <ArrowRight className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2">
+            <Button size="sm" asChild className="text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Link href="/bumdes/credit-scoring">
+                <span>Review Pengajuan Modal</span>
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
             </Button>
-          </Link>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-slate-600 uppercase text-[11px] font-semibold border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3">Nama Warga</th>
-                  <th className="px-4 py-3">No. WhatsApp</th>
-                  <th className="px-4 py-3">Status Inklusi</th>
-                  <th className="px-4 py-3">Status NIK</th>
-                  <th className="px-4 py-3">Poin Reputasi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {MOCK_USERS_PAGELARAN.map((w) => (
-                  <tr key={w.id} className="hover:bg-slate-50/60">
-                    <td className="px-4 py-3.5 font-medium text-slate-900">
-                      {w.fullName}
-                    </td>
-                    <td className="px-4 py-3.5 text-slate-600 text-xs">
-                      {w.phoneNumber}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {w.vulnerabilityFlags.includes("DISABILITAS_FISIK") ? (
-                        <Badge variant="warning" className="text-[10px]">
-                          Disabilitas Fisik
-                        </Badge>
-                      ) : w.vulnerabilityFlags.includes("KELUARGA_PRA_SEJAHTERA") ? (
-                        <Badge variant="secondary" className="text-[10px]">
-                          Pra-Sejahtera
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-slate-500">Umum</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {w.isNikVerified ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-emerald-700 font-medium">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          Terverifikasi
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-xs text-amber-700 font-medium">
-                          <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                          Belum Verifikasi
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 font-semibold text-emerald-600">
-                      {w.wallet?.pointsBalance || 0} Poin
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* 4 KPI Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-border/60 bg-card/60 backdrop-blur-xs">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">Warga Terdaftar</CardTitle>
+              <Users className="h-4 w-4 text-emerald-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold tracking-tight text-foreground">{(activePekon.totalWarga || 1420).toLocaleString("id-ID")}</div>
+              <div className="flex items-center gap-1.5 mt-1">
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-500/40 text-emerald-600 dark:text-emerald-400">
+                  98% NIK Terverifikasi
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60 bg-card/60 backdrop-blur-xs">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">Transaksi Sirkular</CardTitle>
+              <Wallet className="h-4 w-4 text-cyan-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold tracking-tight text-foreground">Rp 48.500.000</div>
+              <div className="flex items-center gap-1.5 mt-1 text-[11px] text-emerald-500 font-medium">
+                +14.2% dari bulan lalu
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60 bg-card/60 backdrop-blur-xs">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">Rekomendasi Grade A</CardTitle>
+              <Scale className="h-4 w-4 text-amber-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold tracking-tight text-foreground">{(activePekon.totalLoansApproved || 18)} Warga</div>
+              <div className="flex items-center gap-1.5 mt-1 text-[11px] text-muted-foreground">
+                Plafon Rp 1.500.000 tanpa agunan
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60 bg-card/60 backdrop-blur-xs">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground">Stok Paket Gizi</CardTitle>
+              <Apple className="h-4 w-4 text-rose-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold tracking-tight text-foreground">85 Paket</div>
+              <div className="flex items-center gap-1.5 mt-1 text-[11px] text-rose-500 font-medium">
+                {(activePekon.stuntingRiskCount || 14)} Balita dalam pantauan
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Chart & Quick Actions Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <EconomicVelocityChart
+              title={`Perputaran Ekonomi ${activePekon.namaPekon}`}
+              description="Volume transaksi terverifikasi: Hasil Bumi, Jastip, dan Upah Mini-Job"
+            />
+          </div>
+
+          <div className="space-y-4">
+            <Card className="border-border/60 bg-card/60">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 text-amber-500" />
+                  Antrean Perlu Tindakan
+                </CardTitle>
+                <CardDescription className="text-xs">Prioritas verifikasi otoritas BUMDes hari ini</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="p-3 rounded-lg border border-border/50 bg-background/50 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span>3 Pengajuan Modal Grade A</span>
+                    <Badge variant="outline" className="text-[10px] text-amber-500 border-amber-500/40">Menunggu</Badge>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Pak Slamet dan 2 warga lainnya telah memenuhi skor kelayakan AHP-TOPSIS &ge; 85.
+                  </p>
+                  <Button size="sm" variant="outline" asChild className="w-full text-xs h-7 border-primary/40 hover:bg-primary/10 hover:text-primary">
+                    <Link href="/bumdes/credit-scoring">Buka Meja Rekomendasi</Link>
+                  </Button>
+                </div>
+
+                <div className="p-3 rounded-lg border border-border/50 bg-background/50 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span>5 Pengajuan NIK Baru</span>
+                    <Badge variant="outline" className="text-[10px] text-cyan-500 border-cyan-500/40">Tertunda</Badge>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Verifikasi identitas fisik KK/KTP sebelum akun warga dapat bertransaksi penuh.
+                  </p>
+                  <Button size="sm" variant="outline" asChild className="w-full text-xs h-7">
+                    <Link href="/bumdes/verifikasi-nik">Verifikasi NIK Sekarang</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Tabel 10 Transaksi Terakhir dengan Status Selfie PoW */}
+        <Card className="border-border/60 bg-card/60">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-3 gap-2">
+            <div>
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Camera className="h-4 w-4 text-primary" />
+                Transaksi Terkini & Bukti Kerja (Proof-of-Work)
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Semua transaksi wajib dilengkapi geotag foto dan verifikasi radius Pekon
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">ID Transaksi</TableHead>
+                    <TableHead className="text-xs">Modul Layanan</TableHead>
+                    <TableHead className="text-xs">Warga / Pelaksana</TableHead>
+                    <TableHead className="text-xs">Nilai Transaksi</TableHead>
+                    <TableHead className="text-xs">Poin Gizi</TableHead>
+                    <TableHead className="text-xs">Status Geotag PoW</TableHead>
+                    <TableHead className="text-xs text-right">Waktu</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentTransactions.map((trx) => (
+                    <TableRow key={trx.id}>
+                      <TableCell className="font-mono text-xs font-medium text-foreground">{trx.id}</TableCell>
+                      <TableCell className="text-xs">
+                        <Badge variant="secondary" className="text-[10px]">
+                          {trx.modul}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs font-medium">{trx.warga}</TableCell>
+                      <TableCell className="text-xs font-semibold text-foreground">{trx.nominal}</TableCell>
+                      <TableCell className="text-xs font-medium text-amber-500">{trx.poin}</TableCell>
+                      <TableCell className="text-xs">
+                        {trx.statusPoW === "VERIFIED_GEOTAG" ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-500">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            GPS Valid (Radius 15m)
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-amber-500">
+                            <Clock className="h-3.5 w-3.5" />
+                            Menunggu Review
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-right text-muted-foreground">{trx.waktu}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </DashboardLayout>
   );
 }

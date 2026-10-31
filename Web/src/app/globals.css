@@ -1,53 +1,125 @@
-@import "leaflet/dist/leaflet.css";
-@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --header-height: 3.5rem;
+}
 
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.14 0.01 240);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.14 0.01 240);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.14 0.01 240);
+  --primary: oklch(0.68 0.16 165);
+  --primary-foreground: oklch(0.12 0.02 165);
+  --secondary: oklch(0.96 0.01 240);
+  --secondary-foreground: oklch(0.2 0.01 240);
+  --muted: oklch(0.96 0.01 240);
+  --muted-foreground: oklch(0.5 0.01 240);
+  --accent: oklch(0.94 0.02 165);
+  --accent-foreground: oklch(0.2 0.02 165);
+  --destructive: oklch(0.58 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.91 0.01 240);
+  --input: oklch(0.91 0.01 240);
+  --ring: oklch(0.68 0.16 165);
+  --chart-1: oklch(0.68 0.16 165);
+  --chart-2: oklch(0.62 0.18 200);
+  --chart-3: oklch(0.75 0.15 80);
+  --chart-4: oklch(0.55 0.17 290);
+  --chart-5: oklch(0.65 0.2 30);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.98 0 0);
+  --sidebar-foreground: oklch(0.14 0.01 240);
+  --sidebar-primary: oklch(0.68 0.16 165);
+  --sidebar-primary-foreground: oklch(0.12 0.02 165);
+  --sidebar-accent: oklch(0.94 0.02 165);
+  --sidebar-accent-foreground: oklch(0.14 0.01 240);
+  --sidebar-border: oklch(0.91 0.01 240);
+  --sidebar-ring: oklch(0.68 0.16 165);
+  --header-height: 3.5rem;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  min-height: 100vh;
+.dark {
+  --background: oklch(0.13 0.01 210);
+  --foreground: oklch(0.98 0.005 200);
+  --card: oklch(0.17 0.01 210);
+  --card-foreground: oklch(0.98 0.005 200);
+  --popover: oklch(0.17 0.01 210);
+  --popover-foreground: oklch(0.98 0.005 200);
+  --primary: oklch(0.78 0.14 165);
+  --primary-foreground: oklch(0.12 0.02 165);
+  --secondary: oklch(0.22 0.01 210);
+  --secondary-foreground: oklch(0.95 0 0);
+  --muted: oklch(0.2 0.01 210);
+  --muted-foreground: oklch(0.68 0.02 210);
+  --accent: oklch(0.24 0.03 175);
+  --accent-foreground: oklch(0.98 0.05 165);
+  --destructive: oklch(0.65 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.26 0.02 195 / 35%);
+  --input: oklch(0.26 0.02 195 / 45%);
+  --ring: oklch(0.78 0.14 165);
+  --chart-1: oklch(0.78 0.14 165);
+  --chart-2: oklch(0.72 0.16 210);
+  --chart-3: oklch(0.8 0.15 85);
+  --chart-4: oklch(0.65 0.18 290);
+  --chart-5: oklch(0.7 0.2 30);
+  --sidebar: oklch(0.15 0.01 210);
+  --sidebar-foreground: oklch(0.95 0.01 200);
+  --sidebar-primary: oklch(0.78 0.14 165);
+  --sidebar-primary-foreground: oklch(0.12 0.02 165);
+  --sidebar-accent: oklch(0.22 0.02 185);
+  --sidebar-accent-foreground: oklch(0.98 0.05 165);
+  --sidebar-border: oklch(0.24 0.02 195 / 30%);
+  --sidebar-ring: oklch(0.78 0.14 165);
+  --header-height: 3.5rem;
 }
 
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #0F1416;
-}
-::-webkit-scrollbar-thumb {
-  background: #3B4A41;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #00F2A9;
-}
-
-@keyframes marquee {
-  0% {
-    transform: translateX(0%);
+@layer base {
+  * {
+    @apply border-border;
   }
-  100% {
-    transform: translateX(-50%);
+  body {
+    @apply bg-background text-foreground;
   }
-}
-
-.animate-marquee {
-  display: flex;
-  width: max-content;
-  animation: marquee 30s linear infinite;
-}
-
-.animate-marquee:hover {
-  animation-play-state: paused;
 }

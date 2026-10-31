@@ -3,318 +3,421 @@
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuth } from "@/context/auth-context";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
-  DialogHeader,
-  DialogTitle,
+  DialogContent,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  ShieldCheck,
-  CheckCircle2,
-  AlertCircle,
-  FileCheck,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import {
   Search,
-  Sparkles,
+  ShieldCheck,
+  ShieldAlert,
+  UserCheck,
+  CheckCircle2,
+  XCircle,
+  Eye,
+  Lock,
+  KeyRound,
 } from "lucide-react";
-import { apiClient } from "@/lib/api-client";
-import { MOCK_USERS_PAGELARAN } from "@/lib/mock-data";
-import { UserProfile } from "@/types";
+
+interface VerificationItem {
+  id: string;
+  fullName: string;
+  maskedNik: string;
+  nikHash: string;
+  nikEncrypted: string;
+  phoneNumber: string;
+  vulnerability: string;
+  status: "PENDING" | "VERIFIED" | "REJECTED";
+  submittedAt: string;
+}
+
+const INITIAL_VERIFICATIONS: VerificationItem[] = [
+  {
+    id: "verif-01",
+    fullName: "Pak Slamet Riyadi",
+    maskedNik: "180410******0002",
+    nikHash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    nikEncrypted: "enc_gcm_9f83a21b...[AES-256]",
+    phoneNumber: "081234567894",
+    vulnerability: "UMUM (Petani Singkong)",
+    status: "VERIFIED",
+    submittedAt: "2026-10-24 09:30",
+  },
+  {
+    id: "verif-02",
+    fullName: "Mbah Suroto",
+    maskedNik: "180410******0005",
+    nikHash: "7d1a54127b222502f5b79b5fb0803061152a44f92b37e23c65dd0e336d10e8dd",
+    nikEncrypted: "enc_gcm_aa44bc19...[AES-256]",
+    phoneNumber: "081234567895",
+    vulnerability: "DISABILITAS_FISIK (Prioritas Kerja)",
+    status: "PENDING",
+    submittedAt: "2026-10-28 14:15",
+  },
+  {
+    id: "verif-03",
+    fullName: "Ibu Siti Rohmah",
+    maskedNik: "180410******0012",
+    nikHash: "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e",
+    nikEncrypted: "enc_gcm_bb8821cf...[AES-256]",
+    phoneNumber: "085211223344",
+    vulnerability: "LANSIA_PRODUKTIF",
+    status: "PENDING",
+    submittedAt: "2026-10-29 08:45",
+  },
+  {
+    id: "verif-04",
+    fullName: "Budi Santoso",
+    maskedNik: "180410******0088",
+    nikHash: "9f83a21b222502f5b79b5fb0803061152a44f92b37e23c65dd0e336d10e8ddbb",
+    nikEncrypted: "enc_gcm_77aacc01...[AES-256]",
+    phoneNumber: "087799001122",
+    vulnerability: "UMUM",
+    status: "REJECTED",
+    submittedAt: "2026-10-22 11:20",
+  },
+  {
+    id: "verif-05",
+    fullName: "Dewi Lestari",
+    maskedNik: "180410******0091",
+    nikHash: "c4ca4238a0b923820dcc509a6f75849b27ae41e4649b934ca495991b7852b855",
+    nikEncrypted: "enc_gcm_1234abcd...[AES-256]",
+    phoneNumber: "081388990011",
+    vulnerability: "KELUARGA_PRA_SEJAHTERA",
+    status: "PENDING",
+    submittedAt: "2026-10-29 11:00",
+  },
+];
 
 export default function VerifikasiNikPage() {
-  const { isMockMode } = useAuth();
-  const [users, setUsers] = useState<UserProfile[]>(MOCK_USERS_PAGELARAN);
+  const { activePekon } = useAuth();
+  const [data, setData] = useState<VerificationItem[]>(INITIAL_VERIFICATIONS);
+  const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [nikInput, setNikInput] = useState("");
-  const [notes, setNotes] = useState("");
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [feedback, setFeedback] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
+  const [selectedItem, setSelectedItem] = useState<VerificationItem | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [confirmApproveOpen, setConfirmApproveOpen] = useState(false);
+  const [confirmRejectOpen, setConfirmRejectOpen] = useState(false);
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.phoneNumber.includes(searchQuery)
-  );
+  const filteredData = data.filter((item) => {
+    const matchesFilter = filterStatus === "ALL" || item.status === filterStatus;
+    const matchesSearch =
+      item.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.maskedNik.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.phoneNumber.includes(searchQuery);
+    return matchesFilter && matchesSearch;
+  });
 
-  const handleOpenDialog = (user: UserProfile) => {
-    setSelectedUser(user);
-    setNikInput("");
-    setNotes(`Pemeriksaan KTP fisik asli di Kantor BUMDes oleh admin.`);
-    setFeedback(null);
+  const handleApprove = () => {
+    if (!selectedItem) return;
+    setData((prev) =>
+      prev.map((item) =>
+        item.id === selectedItem.id ? { ...item, status: "VERIFIED" } : item
+      )
+    );
+    setConfirmApproveOpen(false);
+    setDetailModalOpen(false);
+    toast.success("Verifikasi NIK Disetujui", {
+      description: `Akun warga ${selectedItem.fullName} kini berstatus terverifikasi resmi.`,
+    });
   };
 
-  const handleVerifySubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser) return;
-
-    if (!/^\d{16}$/.test(nikInput.trim())) {
-      setFeedback({
-        type: "error",
-        message: "NIK wajib terdiri dari tepat 16 digit angka sesuai KTP.",
-      });
-      return;
-    }
-
-    setIsVerifying(true);
-    setFeedback(null);
-
-    try {
-      if (!isMockMode) {
-        await apiClient.post("/users/verify-nik", {
-          userId: selectedUser.id,
-          nikInput: nikInput.trim(),
-          notes: notes.trim(),
-        });
-      }
-
-      // Update state locally
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === selectedUser.id ? { ...u, isNikVerified: true } : u
-        )
-      );
-
-      setFeedback({
-        type: "success",
-        message: `Identitas fisik NIK warga "${selectedUser.fullName}" berhasil diverifikasi dan disahkan!`,
-      });
-
-      setTimeout(() => {
-        setSelectedUser(null);
-      }, 1500);
-    } catch (err: any) {
-      setFeedback({
-        type: "error",
-        message:
-          err.message ||
-          "NIK fisik yang dimasukkan tidak cocok dengan data pendaftaran warga.",
-      });
-    } finally {
-      setIsVerifying(false);
-    }
+  const handleReject = () => {
+    if (!selectedItem) return;
+    setData((prev) =>
+      prev.map((item) =>
+        item.id === selectedItem.id ? { ...item, status: "REJECTED" } : item
+      )
+    );
+    setConfirmRejectOpen(false);
+    setDetailModalOpen(false);
+    toast.error("Pengajuan NIK Ditolak", {
+      description: `Pengajuan verifikasi untuk ${selectedItem.fullName} telah ditandai ditolak.`,
+    });
   };
 
   return (
-    <DashboardLayout allowedRoles={["ADMIN_BUMDES", "SUPER_ADMIN"]}>
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-emerald-600" />
-            Verifikasi Fisik NIK Warga
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Validasi identitas KTP warga sebelum pencairan modal BUMDes dan partisipasi bursa panen.
-          </p>
-        </div>
-
-        {/* Search */}
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
-          <Input
-            placeholder="Cari nama atau no. WA..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-10 text-xs"
-          />
-        </div>
-      </div>
-
-      {/* Info Notice */}
-      <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-start gap-3">
-        <Sparkles className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-semibold">Protokol Keamanan Zero-Knowledge Kependudukan:</span>{" "}
-          Database backend menyimpan NIK dalam bentuk hash HMAC-SHA256 dan terenkripsi AES-256-GCM.
-          Admin BUMDes wajib memeriksa KTP fisik asli warga lalu memasukkan 16 digit NIK untuk pencocokan kriptografis satu arah.
-        </div>
-      </div>
-
-      {/* Citizens Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Antrean Warga Pekon Pagelaran</CardTitle>
-          <CardDescription>
-            Menampilkan daftar warga yang terdaftar di database pekon.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-slate-600 uppercase text-[11px] font-semibold border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3">Nama Lengkap</th>
-                  <th className="px-4 py-3">WhatsApp</th>
-                  <th className="px-4 py-3">Kelompok Inklusi</th>
-                  <th className="px-4 py-3">Status Verifikasi</th>
-                  <th className="px-4 py-3 text-right">Aksi BUMDes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-slate-50/70 transition-colors">
-                    <td className="px-4 py-3.5 font-medium text-slate-900">
-                      {user.fullName}
-                    </td>
-                    <td className="px-4 py-3.5 text-xs text-slate-600 font-mono">
-                      {user.phoneNumber}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {user.vulnerabilityFlags.includes("DISABILITAS_FISIK") ? (
-                        <Badge variant="warning" className="text-[10px]">
-                          Disabilitas Fisik
-                        </Badge>
-                      ) : user.vulnerabilityFlags.includes("KELUARGA_PRA_SEJAHTERA") ? (
-                        <Badge variant="secondary" className="text-[10px]">
-                          Pra-Sejahtera
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-slate-500">Warga Umum</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5">
-                      {user.isNikVerified ? (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          Terverifikasi
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
-                          <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                          Menunggu Validasi
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3.5 text-right">
-                      {user.isNikVerified ? (
-                        <span className="text-xs text-slate-400 font-medium">
-                          Selesai
-                        </span>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => handleOpenDialog(user)}
-                          className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-sm"
-                        >
-                          <FileCheck className="w-3.5 h-3.5" />
-                          Verifikasi NIK
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              Meja Verifikasi NIK Warga
+              <Badge variant="outline" className="text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/30 font-medium">
+                {activePekon.namaPekon}
+              </Badge>
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              Validasi kesesuaian fisik KTP/KK dengan data terenkripsi AES-256 dan NIK Hash SHA-256.
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Modal Dialog Verifikasi NIK */}
-      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
-        {selectedUser && (
-          <form onSubmit={handleVerifySubmit}>
+        {/* Filter & Search Bar */}
+        <Card className="border-border/60 bg-card/60">
+          <CardContent className="p-4 flex flex-col md:flex-row gap-3 items-center justify-between">
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari nama, NIK bertopeng, atau HP..."
+                className="pl-9 text-xs h-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
+            <Tabs value={filterStatus} onValueChange={setFilterStatus} className="w-full md:w-auto">
+              <TabsList className="grid grid-cols-4 w-full md:w-auto h-9">
+                <TabsTrigger value="ALL" className="text-xs">Semua</TabsTrigger>
+                <TabsTrigger value="PENDING" className="text-xs">Menunggu</TabsTrigger>
+                <TabsTrigger value="VERIFIED" className="text-xs">Diterima</TabsTrigger>
+                <TabsTrigger value="REJECTED" className="text-xs">Ditolak</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* Table List */}
+        <Card className="border-border/60 bg-card/60">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center justify-between">
+              <span>Daftar Pengajuan Verifikasi ({filteredData.length})</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">Nama Lengkap</TableHead>
+                    <TableHead className="text-xs">NIK (Masked)</TableHead>
+                    <TableHead className="text-xs">Kategori Inklusi / Kerentanan</TableHead>
+                    <TableHead className="text-xs">No. WhatsApp</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs">Tanggal</TableHead>
+                    <TableHead className="text-xs text-right">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredData.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="text-xs font-semibold text-foreground">
+                        {item.fullName}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground flex items-center gap-1.5">
+                        <Lock className="h-3 w-3 text-primary/70" />
+                        {item.maskedNik}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        <Badge variant="outline" className="text-[10px] font-normal border-border/80">
+                          {item.vulnerability}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs font-mono">{item.phoneNumber}</TableCell>
+                      <TableCell className="text-xs">
+                        {item.status === "VERIFIED" && (
+                          <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px]">
+                            Terverifikasi
+                          </Badge>
+                        )}
+                        {item.status === "PENDING" && (
+                          <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[10px]">
+                            Menunggu Review
+                          </Badge>
+                        )}
+                        {item.status === "REJECTED" && (
+                          <Badge className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30 text-[10px]">
+                            Ditolak
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{item.submittedAt}</TableCell>
+                      <TableCell className="text-xs text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-xs gap-1 hover:bg-primary/10 hover:text-primary"
+                          onClick={() => {
+                            setSelectedItem(item);
+                            setDetailModalOpen(true);
+                          }}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          <span>Review</span>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Detail Dialog */}
+      {selectedItem && (
+        <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Verifikasi Fisik KTP Warga</DialogTitle>
-              <DialogDescription>
-                Masukkan 16 digit NIK asli dari KTP fisik milik warga untuk dilakukan pencocokan hash.
+              <DialogTitle className="text-base font-bold flex items-center gap-2">
+                <UserCheck className="h-4 w-4 text-primary" />
+                Review Dokumen Identitas
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Periksa data fisik identitas dengan data kriptografi backend
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-4 py-2">
-              {/* Profile summary */}
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs space-y-1">
+            <div className="space-y-4 py-2 text-xs">
+              <div className="p-3 rounded-lg bg-muted/50 border border-border/50 space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-slate-500">Nama Warga:</span>
-                  <span className="font-semibold text-slate-800">{selectedUser.fullName}</span>
+                  <span className="text-muted-foreground">Nama Warga:</span>
+                  <span className="font-semibold text-foreground">{selectedItem.fullName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-500">No. WhatsApp:</span>
-                  <span className="font-mono text-slate-700">{selectedUser.phoneNumber}</span>
+                  <span className="text-muted-foreground">Nomor Telepon:</span>
+                  <span className="font-mono text-foreground">{selectedItem.phoneNumber}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">NIK Bertopeng:</span>
+                  <span className="font-mono font-semibold text-primary">{selectedItem.maskedNik}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Inklusi:</span>
+                  <span>{selectedItem.vulnerability}</span>
                 </div>
               </div>
 
-              {/* Feedback Alert inside dialog */}
-              {feedback && (
-                <div
-                  className={`p-3 rounded-lg text-xs flex items-start gap-2 ${
-                    feedback.type === "success"
-                      ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                      : "bg-red-50 text-red-800 border border-red-200"
-                  }`}
-                >
-                  {feedback.type === "success" ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                  )}
-                  <span>{feedback.message}</span>
+              {/* Data Kriptografi Backend */}
+              <div className="p-3 rounded-lg bg-background/80 border border-border/60 space-y-2">
+                <div className="flex items-center gap-1.5 font-semibold text-[11px] text-muted-foreground">
+                  <KeyRound className="h-3.5 w-3.5 text-primary" />
+                  Kriptografi Zero-Trust (Backend NestJS)
                 </div>
-              )}
-
-              {/* NIK Input */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">
-                  16 Digit NIK KTP Asli
-                </label>
-                <Input
-                  type="text"
-                  maxLength={16}
-                  placeholder="Contoh: 1810012304850001"
-                  value={nikInput}
-                  onChange={(e) => setNikInput(e.target.value.replace(/\D/g, ""))}
-                  required
-                  className="font-mono text-sm tracking-wider"
-                />
-                <p className="text-[10px] text-slate-400">
-                  Periksa angka pada fisik e-KTP warga secara teliti.
-                </p>
-              </div>
-
-              {/* Notes */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700">
-                  Catatan Verifikator BUMDes
-                </label>
-                <Input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Catatan verifikasi..."
-                  className="text-xs"
-                />
+                <div className="space-y-1">
+                  <div className="text-[10px] text-muted-foreground">SHA-256 NIK Hash (Pencarian Unik):</div>
+                  <div className="font-mono text-[10px] text-foreground break-all bg-muted/60 p-1.5 rounded">
+                    {selectedItem.nikHash}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[10px] text-muted-foreground">AES-256-GCM Payload (Privasi Aman):</div>
+                  <div className="font-mono text-[10px] text-foreground break-all bg-muted/60 p-1.5 rounded">
+                    {selectedItem.nikEncrypted}
+                  </div>
+                </div>
               </div>
             </div>
 
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedUser(null)}
-              >
-                Batal
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                disabled={isVerifying || nikInput.length !== 16}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-              >
-                {isVerifying ? "Mencocokkan Hash..." : "Sahkan Verifikasi"}
-              </Button>
+            <DialogFooter className="flex flex-col sm:flex-row gap-2">
+              {selectedItem.status === "PENDING" && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs text-rose-500 border-rose-500/40 hover:bg-rose-500/10"
+                    onClick={() => setConfirmRejectOpen(true)}
+                  >
+                    <XCircle className="h-3.5 w-3.5 mr-1" />
+                    Tolak Verifikasi
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={() => setConfirmApproveOpen(true)}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                    Setujui NIK Warga
+                  </Button>
+                </>
+              )}
+              {selectedItem.status !== "PENDING" && (
+                <Button variant="ghost" size="sm" onClick={() => setDetailModalOpen(false)}>
+                  Tutup
+                </Button>
+              )}
             </DialogFooter>
-          </form>
-        )}
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Alert Dialog Konfirmasi Setuju */}
+      <AlertDialog open={confirmApproveOpen} onOpenChange={setConfirmApproveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-emerald-500 flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5" />
+              Konfirmasi Persetujuan NIK
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              Apakah Anda yakin telah memverifikasi dokumen fisik asli untuk <b>{selectedItem?.fullName}</b>? Akun ini akan segera dapat mengajukan modal dan membuka bursa.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="text-xs">Batal</AlertDialogCancel>
+            <AlertDialogAction className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleApprove}>
+              Ya, Setujui NIK
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Alert Dialog Konfirmasi Tolak */}
+      <AlertDialog open={confirmRejectOpen} onOpenChange={setConfirmRejectOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-base font-bold text-rose-500 flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5" />
+              Konfirmasi Penolakan NIK
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-muted-foreground">
+              Apakah Anda yakin data fisik tidak sesuai untuk <b>{selectedItem?.fullName}</b>? Warga harus mengajukan ulang foto dokumen yang jelas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="text-xs">Batal</AlertDialogCancel>
+            <AlertDialogAction className="text-xs bg-rose-600 hover:bg-rose-700 text-white" onClick={handleReject}>
+              Tolak Pengajuan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 }

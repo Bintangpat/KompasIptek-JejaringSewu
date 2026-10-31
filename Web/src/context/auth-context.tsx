@@ -1,162 +1,180 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { UserProfile, UserRole } from "@/types";
-import { apiClient } from "@/lib/api-client";
+import React, { createContext, useContext, useState } from "react";
+import { Pekon, UserProfile, UserRole } from "@/types";
 import { MOCK_PEKON_LIST } from "@/lib/mock-data";
 
 interface AuthContextType {
-  user: UserProfile | null;
+  user: UserProfile;
   token: string | null;
   isLoading: boolean;
-  isMockMode: boolean;
-  setMockMode: (val: boolean) => void;
+  activeRole: UserRole;
+  activePekon: Pekon;
+  switchRole: (role: UserRole) => void;
+  switchPekon: (pekonId: string) => void;
   login: (identifier: string, password: string) => Promise<UserProfile>;
-  loginAsDemo: (role: "ADMIN_BUMDES" | "ADMIN_BAPPERIDA") => UserProfile;
+  verifyOtpLogin: (identifier: string, otpCode: string) => Promise<UserProfile>;
   logout: () => void;
 }
+
+const DEFAULT_PEKON = MOCK_PEKON_LIST[0];
+
+const DEFAULT_PROFILES: Record<UserRole, UserProfile> = {
+  ADMIN_BUMDES: {
+    id: "bumdes-admin-01",
+    fullName: "Bambang Haryanto",
+    phoneNumber: "081298765432",
+    email: "admin.bumdes@pagelaran.pekon.id",
+    role: "ADMIN_BUMDES",
+    isNikVerified: true,
+    vulnerabilityFlags: ["NONE"],
+    hasToddler: false,
+    referralCode: "BUMDES-PGL",
+    isTrustedCollector: true,
+    pekon: DEFAULT_PEKON,
+    wallet: {
+      pointsBalance: "1250",
+      cashBalance: "48500000",
+    },
+    createdAt: "2026-01-01T00:00:00Z",
+  },
+  ADMIN_BAPPERIDA: {
+    id: "bapperida-admin-01",
+    fullName: "Dr. Heri Kuswanto, M.Si",
+    phoneNumber: "08117210088",
+    email: "heri.kuswanto@pringsewukab.go.id",
+    role: "ADMIN_BAPPERIDA",
+    isNikVerified: true,
+    vulnerabilityFlags: ["NONE"],
+    hasToddler: false,
+    referralCode: "BAPPERIDA-KAB",
+    isTrustedCollector: false,
+    pekon: DEFAULT_PEKON,
+    wallet: {
+      pointsBalance: "9999",
+      cashBalance: "500000000",
+    },
+    createdAt: "2026-01-01T00:00:00Z",
+  },
+  WARGA: {
+    id: "d456d59d-d98b-426a-a476-fe65b18482d5",
+    fullName: "Pak Slamet (Petani & Kurir Jastip)",
+    phoneNumber: "081234567894",
+    email: "slamet.warga@gmail.com",
+    role: "WARGA",
+    isNikVerified: true,
+    vulnerabilityFlags: ["NONE"],
+    hasToddler: true,
+    referralCode: "SLAMET-001",
+    isTrustedCollector: true,
+    pekon: DEFAULT_PEKON,
+    wallet: {
+      pointsBalance: "185",
+      cashBalance: "450000",
+    },
+    createdAt: "2026-10-15T08:00:00Z",
+  },
+  PENGUMPUL_JUJUR: {
+    id: "pengumpul-01",
+    fullName: "Haji Rohmat (Pengepul Jujur Komoditas)",
+    phoneNumber: "081377889900",
+    email: "rohmat.tani@gmail.com",
+    role: "PENGUMPUL_JUJUR",
+    isNikVerified: true,
+    vulnerabilityFlags: ["NONE"],
+    hasToddler: false,
+    referralCode: "ROHMAT-JUJUR",
+    isTrustedCollector: true,
+    pekon: DEFAULT_PEKON,
+    wallet: {
+      pointsBalance: "420",
+      cashBalance: "12800000",
+    },
+    createdAt: "2026-02-10T00:00:00Z",
+  },
+  UMKM: {
+    id: "umkm-01",
+    fullName: "Warung Bu Siti (UMKM Keripik Pisang)",
+    phoneNumber: "085266778899",
+    email: "siti.keripik@gmail.com",
+    role: "UMKM",
+    isNikVerified: true,
+    vulnerabilityFlags: ["NONE"],
+    hasToddler: false,
+    referralCode: "SITI-UMKM",
+    isTrustedCollector: false,
+    pekon: DEFAULT_PEKON,
+    wallet: {
+      pointsBalance: "310",
+      cashBalance: "3400000",
+    },
+    createdAt: "2026-03-05T00:00:00Z",
+  },
+  SUPER_ADMIN: {
+    id: "superadmin-01",
+    fullName: "Super Administrator Diskominfo",
+    phoneNumber: "081199990000",
+    email: "root@pringsewukab.go.id",
+    role: "SUPER_ADMIN",
+    isNikVerified: true,
+    vulnerabilityFlags: ["NONE"],
+    hasToddler: false,
+    referralCode: "ROOT-SEWU",
+    isTrustedCollector: true,
+    pekon: DEFAULT_PEKON,
+    wallet: {
+      pointsBalance: "99999",
+      cashBalance: "999999999",
+    },
+    createdAt: "2026-01-01T00:00:00Z",
+  },
+};
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isMockMode, setIsMockMode] = useState(false);
+  const [activeRole, setActiveRole] = useState<UserRole>("ADMIN_BUMDES");
+  const [activePekon, setActivePekon] = useState<Pekon>(DEFAULT_PEKON);
+  const [user, setUser] = useState<UserProfile>(DEFAULT_PROFILES.ADMIN_BUMDES);
 
-  useEffect(() => {
-    // Check saved session in localStorage
-    const savedToken = localStorage.getItem("jejaring_access_token");
-    const savedUser = localStorage.getItem("jejaring_user");
-    const savedMockMode = localStorage.getItem("jejaring_mock_mode");
+  const switchRole = (newRole: UserRole) => {
+    setActiveRole(newRole);
+    const profile = DEFAULT_PROFILES[newRole] || DEFAULT_PROFILES.ADMIN_BUMDES;
+    setUser({ ...profile, pekon: activePekon });
+  };
 
-    if (savedMockMode === "true") {
-      setIsMockMode(true);
-    }
-
-    if (savedToken && savedUser) {
-      try {
-        setToken(savedToken);
-        setUser(JSON.parse(savedUser));
-      } catch (e) {
-        localStorage.removeItem("jejaring_access_token");
-        localStorage.removeItem("jejaring_user");
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  const login = async (identifier: string, password: string): Promise<UserProfile> => {
-    setIsLoading(true);
-    try {
-      const response = await apiClient.post("/auth/login", {
-        identifier,
-        password,
-        deviceId: "web-dashboard-client",
-      });
-
-      const data = response.data;
-      const accessToken = data.accessToken;
-      const userProfile = data.user;
-
-      localStorage.setItem("jejaring_access_token", accessToken);
-      localStorage.setItem("jejaring_user", JSON.stringify(userProfile));
-      localStorage.removeItem("jejaring_mock_mode");
-
-      setToken(accessToken);
-      setUser(userProfile);
-      setIsMockMode(false);
-      return userProfile;
-    } catch (err: any) {
-      // Fallback to offline mock login if server unreachable and using demo credentials
-      if (
-        (identifier === "081234567891" || identifier === "bumdes@pekon.id") &&
-        password === "AdminBumdes123!"
-      ) {
-        return loginAsDemo("ADMIN_BUMDES");
-      } else if (
-        (identifier === "081234567892" || identifier === "bapperida@pringsewukab.go.id") &&
-        password === "BapperidaPringsewu123!"
-      ) {
-        return loginAsDemo("ADMIN_BAPPERIDA");
-      }
-      throw err;
-    } finally {
-      setIsLoading(false);
+  const switchPekon = (pekonId: string) => {
+    const found = MOCK_PEKON_LIST.find((p) => p.id === pekonId);
+    if (found) {
+      setActivePekon(found);
+      setUser((prev) => ({ ...prev, pekon: found }));
     }
   };
 
-  const loginAsDemo = (role: "ADMIN_BUMDES" | "ADMIN_BAPPERIDA"): UserProfile => {
-    const demoUser: UserProfile =
-      role === "ADMIN_BUMDES"
-        ? {
-            id: "d456d59d-d98b-426a-a476-fe65b18482d1",
-            fullName: "Budi Santoso (Admin BUMDes Pagelaran)",
-            phoneNumber: "081234567891",
-            email: "bumdes@pekon.id",
-            role: "ADMIN_BUMDES",
-            isNikVerified: true,
-            vulnerabilityFlags: ["NONE"],
-            hasToddler: false,
-            isTrustedCollector: false,
-            pekon: MOCK_PEKON_LIST[0],
-            createdAt: "2026-10-21T00:00:00Z",
-          }
-        : {
-            id: "d456d59d-d98b-426a-a476-fe65b18482d2",
-            fullName: "Ir. H. Hendra, M.Si (Admin BAPPERIDA)",
-            phoneNumber: "081234567892",
-            email: "bapperida@pringsewukab.go.id",
-            role: "ADMIN_BAPPERIDA",
-            isNikVerified: true,
-            vulnerabilityFlags: ["NONE"],
-            hasToddler: false,
-            isTrustedCollector: false,
-            createdAt: "2026-10-21T00:00:00Z",
-          };
+  const login = async (): Promise<UserProfile> => {
+    return user;
+  };
 
-    const mockToken = `mock-token-${role.toLowerCase()}-${Date.now()}`;
-    localStorage.setItem("jejaring_access_token", mockToken);
-    localStorage.setItem("jejaring_user", JSON.stringify(demoUser));
-    localStorage.setItem("jejaring_mock_mode", "true");
-
-    setToken(mockToken);
-    setUser(demoUser);
-    setIsMockMode(true);
-    return demoUser;
+  const verifyOtpLogin = async (): Promise<UserProfile> => {
+    return user;
   };
 
   const logout = () => {
-    try {
-      if (!isMockMode) {
-        apiClient.post("/auth/logout").catch(() => {});
-      }
-    } finally {
-      localStorage.removeItem("jejaring_access_token");
-      localStorage.removeItem("jejaring_user");
-      localStorage.removeItem("jejaring_mock_mode");
-      setUser(null);
-      setToken(null);
-      setIsMockMode(false);
-      window.location.href = "/login";
-    }
-  };
-
-  const handleSetMockMode = (val: boolean) => {
-    setIsMockMode(val);
-    localStorage.setItem("jejaring_mock_mode", val ? "true" : "false");
+    switchRole("WARGA");
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        token,
-        isLoading,
-        isMockMode,
-        setMockMode: handleSetMockMode,
+        token: "zero-auth-demo-token",
+        isLoading: false,
+        activeRole,
+        activePekon,
+        switchRole,
+        switchPekon,
         login,
-        loginAsDemo,
+        verifyOtpLogin,
         logout,
       }}
     >
@@ -165,7 +183,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useAuth() {
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");

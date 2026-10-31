@@ -15,11 +15,7 @@ export function LandingFooter() {
           {/* Top Blur Glow Accents (#1:483) */}
           <div className="absolute top-[-50px] left-1/2 -translate-x-1/2 -z-10 h-36 w-96 rounded-full bg-[#00F2A9]/15 blur-[80px] pointer-events-none" />
 
-          {/* Badge: Akses Terbuka & Gratis (#1:459) */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#C1FFDD]/20 bg-[#1C2026] px-3.5 py-1 text-xs font-mono text-[#C1FFDD]">
-            <Sparkles className="h-3.5 w-3.5 text-[#00F2A9]" />
-            <span>Akses Terbuka & Gratis</span>
-          </div>
+
 
           {/* Heading 2 (#1:464) */}
           <div className="space-y-3 max-w-xl mx-auto">

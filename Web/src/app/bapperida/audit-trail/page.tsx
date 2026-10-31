@@ -1,142 +1,302 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { FileCheck2, ShieldCheck, CheckCircle2 } from "lucide-react";
-import { formatRupiah, formatDate } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  FileSearch,
+  ShieldCheck,
+  ShieldAlert,
+  Search,
+  KeyRound,
+  Eye,
+  CheckCircle2,
+  Terminal,
+} from "lucide-react";
 
-const MOCK_AUDIT_LOGS = [
+interface AuditLogItem {
+  id: string;
+  eventType: "WALLET_MUTATION" | "DISBURSEMENT" | "SELFIE_POW" | "NIK_VERIFIED";
+  actor: string;
+  ipAddress: string;
+  pekon: string;
+  hmacSignature: string;
+  isIntegrityValid: boolean;
+  timestamp: string;
+  rawPayload: Record<string, unknown>;
+}
+
+const INITIAL_LOGS: AuditLogItem[] = [
   {
-    id: "audit-001",
-    timestamp: "2026-10-21T07:30:00Z",
-    actorName: "Budi Santoso (Admin BUMDes Pagelaran)",
-    action: "APPROVE_LOAN_DISBURSEMENT",
-    recipientName: "Mbah Suroto (Pekerja Inklusif Disabilitas)",
-    pekon: "Pekon Pagelaran",
-    plafond: 1500000,
-    status: "APPROVED",
-    ipAddress: "192.168.1.45",
-    integrityHash: "sha256-e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    notes: "Penyaluran modal untuk pengadaan alat bantu usaha bengkel kecil di rumah.",
+    id: "LOG-9941",
+    eventType: "DISBURSEMENT",
+    actor: "ADMIN_BUMDES (Bambang Haryanto)",
+    ipAddress: "103.144.12.8",
+    pekon: "Pagelaran",
+    hmacSignature: "hmac_sha256_e8b91a...[VERIFIED]",
+    isIntegrityValid: true,
+    timestamp: "2026-10-30 07:15:22",
+    rawPayload: {
+      action: "DISBURSE_LOAN_GRADE_A",
+      targetUser: "Pak Slamet Riyadi",
+      amount: 1500000,
+      idempotencyKey: "idem_9f81a7b8-20261030",
+      securitySignature: "hmac_sha256_e8b91a27c0892f3e80b2a",
+    },
   },
   {
-    id: "audit-002",
-    timestamp: "2026-10-21T06:05:00Z",
-    actorName: "Siti Rahma (Admin BUMDes Pringsewu Barat)",
-    action: "APPROVE_LOAN_DISBURSEMENT",
-    recipientName: "Ahmad Dahlan (Driver Komuter Nebeng)",
-    pekon: "Pekon Pringsewu Barat",
-    plafond: 1500000,
-    status: "APPROVED",
-    ipAddress: "192.168.2.12",
-    integrityHash: "sha256-4b227777d4dd1fc61c6f884f48641d02b4d121d3fd328cb08b5531fcacdabf8a",
-    notes: "Tambahan modal usaha warung kelontong pekon setelah 35 kali sukses jastip.",
+    id: "LOG-9940",
+    eventType: "SELFIE_POW",
+    actor: "WARGA (Mbah Suroto)",
+    ipAddress: "182.1.22.90",
+    pekon: "Pagelaran",
+    hmacSignature: "hmac_sha256_aa44bc...[VERIFIED]",
+    isIntegrityValid: true,
+    timestamp: "2026-10-30 06:40:11",
+    rawPayload: {
+      action: "SUBMIT_PROOF_OF_WORK",
+      jobId: "JOB-401",
+      gpsRadiusMeters: 14.8,
+      cameraDirect: true,
+      imageSha256: "3f82a991823bc110a28f73129841af82c9e8",
+    },
   },
   {
-    id: "audit-003",
-    timestamp: "2026-10-20T16:20:00Z",
-    actorName: "Budi Santoso (Admin BUMDes Pagelaran)",
-    action: "VERIFY_PHYSICAL_NIK",
-    recipientName: "Pak Slamet (Petani Singkong)",
-    pekon: "Pekon Pagelaran",
-    plafond: null,
-    status: "VERIFIED",
-    ipAddress: "192.168.1.45",
-    integrityHash: "sha256-ef2d127de37b942baad06145e54b0c619a1f22327b2ebbcfbec78f5564afe39d",
-    notes: "Pemeriksaan KTP fisik asli di kantor BUMDes Pagelaran.",
+    id: "LOG-9939",
+    eventType: "WALLET_MUTATION",
+    actor: "SYSTEM_LEDGER",
+    ipAddress: "127.0.0.1 (Internal Worker)",
+    pekon: "Pagelaran",
+    hmacSignature: "hmac_sha256_44ee98...[VERIFIED]",
+    isIntegrityValid: true,
+    timestamp: "2026-10-30 06:12:05",
+    rawPayload: {
+      type: "DOUBLE_ENTRY_BOOKKEEPING",
+      debitAccount: "BUMDES_ESCROW",
+      creditAccount: "USER_WALLET_SLAMET",
+      amount: 850000,
+      balanceBefore: 47650000,
+      balanceAfter: 48500000,
+    },
   },
   {
-    id: "audit-004",
-    timestamp: "2026-10-20T11:45:00Z",
-    actorName: "Agus Triyono (Admin BUMDes Sukoharjo)",
-    action: "APPROVE_LOAN_DISBURSEMENT",
-    recipientName: "Ibu Mariyam (Pengrajin Tapis)",
-    pekon: "Pekon Sukoharjo",
-    plafond: 1500000,
-    status: "APPROVED",
-    ipAddress: "192.168.4.88",
-    integrityHash: "sha256-8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
-    notes: "Penyaluran modal bahan baku kain & benang sulam tapis pekon.",
+    id: "LOG-9938",
+    eventType: "NIK_VERIFIED",
+    actor: "ADMIN_BUMDES (Bambang Haryanto)",
+    ipAddress: "103.144.12.8",
+    pekon: "Pagelaran",
+    hmacSignature: "hmac_sha256_77bbaa...[VERIFIED]",
+    isIntegrityValid: true,
+    timestamp: "2026-10-29 16:30:00",
+    rawPayload: {
+      action: "VERIFY_CITIZEN_NIK",
+      nikHashSha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      aesPayloadKey: "aes_256_gcm_vault_v1",
+    },
   },
 ];
 
 export default function AuditTrailPage() {
+  const [logs] = useState<AuditLogItem[]>(INITIAL_LOGS);
+  const [filterType, setFilterType] = useState<string>("ALL");
+  const [search, setSearch] = useState("");
+  const [selectedLog, setSelectedLog] = useState<AuditLogItem | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const filteredLogs = logs.filter((l) => {
+    const matchesFilter = filterType === "ALL" || l.eventType === filterType;
+    const matchesSearch =
+      l.id.toLowerCase().includes(search.toLowerCase()) ||
+      l.actor.toLowerCase().includes(search.toLowerCase()) ||
+      l.pekon.toLowerCase().includes(search.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
   return (
-    <DashboardLayout allowedRoles={["ADMIN_BAPPERIDA", "SUPER_ADMIN"]}>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <FileCheck2 className="w-6 h-6 text-blue-600" />
-            Audit Trail & Akuntabilitas Penyaluran Modal Desa
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Rekam jejak tidak dapat diubah (*immutable log*) setiap persetujuan modal usaha ultra-mikro BUMDes se-Kabupaten Pringsewu.
-          </p>
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              Forensik Audit Trail & Keamanan Geospasial
+              <Badge variant="outline" className="text-xs bg-cyan-500/10 text-cyan-500 border-cyan-500/30 font-medium">
+                Inspektorat / BAPPERIDA
+              </Badge>
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              Catatan tamper-proof aktivitas transaksi, mutasi double-entry, dan verifikasi selfie PoW berintegritas HMAC-SHA256.
+            </p>
+          </div>
         </div>
+
+        {/* Search & Filter */}
+        <Card className="border-border/60 bg-card/60">
+          <CardContent className="p-4 flex flex-col md:flex-row gap-3 items-center justify-between">
+            <div className="relative w-full md:w-80">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Cari ID Log, aktor, atau Pekon..."
+                className="pl-9 text-xs h-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+
+            <Tabs value={filterType} onValueChange={setFilterType} className="w-full md:w-auto">
+              <TabsList className="grid grid-cols-5 w-full md:w-auto h-9">
+                <TabsTrigger value="ALL" className="text-xs">Semua</TabsTrigger>
+                <TabsTrigger value="DISBURSEMENT" className="text-xs">Pencairan</TabsTrigger>
+                <TabsTrigger value="SELFIE_POW" className="text-xs">PoW</TabsTrigger>
+                <TabsTrigger value="WALLET_MUTATION" className="text-xs">Dompet</TabsTrigger>
+                <TabsTrigger value="NIK_VERIFIED" className="text-xs">NIK</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* Logs Table */}
+        <Card className="border-border/60 bg-card/60">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center justify-between">
+              <span>Log Peristiwa Sistem ({filteredLogs.length})</span>
+              <span className="text-xs font-normal text-muted-foreground">Protokol HMAC-SHA256 Aktif</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">ID Log</TableHead>
+                    <TableHead className="text-xs">Tipe Peristiwa</TableHead>
+                    <TableHead className="text-xs">Aktor / Pengguna</TableHead>
+                    <TableHead className="text-xs">Pekon</TableHead>
+                    <TableHead className="text-xs">Integritas Kriptografi</TableHead>
+                    <TableHead className="text-xs">Waktu Server</TableHead>
+                    <TableHead className="text-xs text-right">Inspeksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLogs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="font-mono text-xs font-bold text-foreground">{log.id}</TableCell>
+                      <TableCell className="text-xs">
+                        <Badge variant="outline" className="text-[10px] font-mono">
+                          {log.eventType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs font-medium text-foreground">{log.actor}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{log.pekon}</TableCell>
+                      <TableCell className="text-xs">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-500 font-mono">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          HMAC-Valid
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-xs font-mono text-muted-foreground">{log.timestamp}</TableCell>
+                      <TableCell className="text-xs text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 text-xs gap-1 hover:bg-primary/10 hover:text-primary"
+                          onClick={() => {
+                            setSelectedLog(log);
+                            setModalOpen(true);
+                          }}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          <span>Detail</span>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Audit Log Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Log Otorisasi Dana Bergulir BUMDes</CardTitle>
-          <CardDescription>
-            Memuat identitas pejabat verifikator, alamat IP, timestamp, hash kriptografi, dan catatan persetujuan.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50 text-slate-600 uppercase text-[11px] font-semibold border-b border-slate-200">
-                <tr>
-                  <th className="px-4 py-3">Waktu Kejadian</th>
-                  <th className="px-4 py-3">Aktor Otoritas</th>
-                  <th className="px-4 py-3">Aktivitas / Aksi</th>
-                  <th className="px-4 py-3">Penerima Manfaat</th>
-                  <th className="px-4 py-3">Nominal Modal</th>
-                  <th className="px-4 py-3">Integritas Checksum</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {MOCK_AUDIT_LOGS.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50/70">
-                    <td className="px-4 py-3.5 text-xs text-slate-500 font-mono">
-                      {formatDate(log.timestamp)}
-                    </td>
-                    <td className="px-4 py-3.5 font-medium text-slate-900">
-                      <div>{log.actorName}</div>
-                      <div className="text-[10px] text-slate-400 font-mono">IP: {log.ipAddress}</div>
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <Badge
-                        variant={log.action === "APPROVE_LOAN_DISBURSEMENT" ? "default" : "secondary"}
-                        className="text-[10px] font-mono"
-                      >
-                        {log.action}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3.5 text-xs text-slate-800">
-                      <div className="font-semibold">{log.recipientName}</div>
-                      <div className="text-[10px] text-slate-500">{log.pekon}</div>
-                    </td>
-                    <td className="px-4 py-3.5 font-bold text-emerald-700">
-                      {log.plafond ? formatRupiah(log.plafond) : "-"}
-                    </td>
-                    <td className="px-4 py-3.5 text-[10px] font-mono text-slate-400 max-w-[120px] truncate" title={log.integrityHash}>
-                      <span className="inline-flex items-center gap-1 text-emerald-600">
-                        <CheckCircle2 className="w-3 h-3 shrink-0" />
-                        Valid
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Inspect Modal */}
+      {selectedLog && (
+        <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold flex items-center gap-2">
+                <Terminal className="h-4 w-4 text-primary" />
+                Forensik Payload Kriptografi ({selectedLog.id})
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Payload JSON terenkripsi dan tanda tangan digital aktor transaksi
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3 py-2 text-xs">
+              <div className="p-3 rounded-lg bg-muted/50 border border-border/50 space-y-1.5 font-mono text-[11px]">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Peristiwa:</span>
+                  <span className="font-semibold text-foreground">{selectedLog.eventType}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Aktor:</span>
+                  <span className="text-foreground">{selectedLog.actor}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">IP Origin:</span>
+                  <span className="text-foreground">{selectedLog.ipAddress}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Timestamp:</span>
+                  <span className="text-foreground">{selectedLog.timestamp}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-[11px] font-semibold text-foreground flex items-center gap-1">
+                  <KeyRound className="h-3.5 w-3.5 text-primary" />
+                  Raw JSON Payload:
+                </div>
+                <pre className="p-3 rounded-lg bg-slate-950 text-emerald-400 font-mono text-[10px] overflow-x-auto max-h-48 border border-border/40">
+                  {JSON.stringify(selectedLog.rawPayload, null, 2)}
+                </pre>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="ghost" size="sm" onClick={() => setModalOpen(false)} className="text-xs">
+                Tutup
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </DashboardLayout>
   );
 }

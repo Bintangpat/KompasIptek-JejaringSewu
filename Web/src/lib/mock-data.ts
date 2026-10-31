@@ -1,4 +1,4 @@
-import { Pekon, UserProfile, LoanRecommendation, NutritionPackage, CreditScoreDetail } from "@/types";
+import { Pekon, UserProfile, LoanRecommendation, NutritionPackage, NutritionRedemption, CreditScoreDetail } from "@/types";
 
 export const MOCK_PEKON_LIST: (Pekon & {
   totalWarga: number;
@@ -224,3 +224,58 @@ export const MOCK_RADAR_METRICS = [
   { subject: "Selfie PoW (20%)", A: 95, fullMark: 100 },
   { subject: "Inklusi (15%)", A: 90, fullMark: 100 },
 ];
+
+export const MOCK_NUTRITION_REDEMPTIONS: NutritionRedemption[] = [
+  {
+    id: "red-001",
+    userId: "w-003",
+    packageId: "9f323a13-e691-43d1-8a9a-c33002c02786",
+    pointsSpent: 25,
+    status: "VERIFIED_PICKED_UP",
+    beneficiaryName: "Ibu Sutinah (Balita: Rafa, 18 bln)",
+    toddlerAgeMonths: 18,
+    user: {
+      fullName: "Ibu Sutinah",
+      phoneNumber: "081234567801",
+    },
+    package: {
+      packageName: "Paket Gizi Stunting A: Telur Bebek Lokal (10 Butir) + Lele Segar (1 Kg)",
+    },
+    createdAt: "2026-10-21T08:30:00Z",
+  },
+  {
+    id: "red-002",
+    userId: "w-002",
+    packageId: "c601b5f8-e2a1-456a-a0ee-919757dcd1d0",
+    pointsSpent: 30,
+    status: "PENDING",
+    beneficiaryName: "Mbah Suroto (Cucu: Aulia, 24 bln)",
+    toddlerAgeMonths: 24,
+    user: {
+      fullName: "Mbah Suroto",
+      phoneNumber: "081234567895",
+    },
+    package: {
+      packageName: "Paket Gizi Stunting B: Ikan Nila Segar (1 Kg) + Sayuran Organik Pekon",
+    },
+    createdAt: "2026-10-21T09:45:00Z",
+  },
+  {
+    id: "red-003",
+    userId: "d456d59d-d98b-426a-a476-fe65b18482d5",
+    packageId: "f9129ea8-75fb-4ae4-aaba-adcb8a04985f",
+    pointsSpent: 20,
+    status: "VERIFIED_PICKED_UP",
+    beneficiaryName: "Pak Slamet (Balita: Kenzo, 12 bln)",
+    toddlerAgeMonths: 12,
+    user: {
+      fullName: "Pak Slamet",
+      phoneNumber: "081234567894",
+    },
+    package: {
+      packageName: "Paket Gizi Stunting C: Kacang Hijau + Gula Aren Murni Pringsewu",
+    },
+    createdAt: "2026-10-20T14:20:00Z",
+  },
+];
+

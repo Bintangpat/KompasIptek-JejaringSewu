@@ -63,23 +63,7 @@ export function HeroSection() {
           </a>
         </div>
 
-        {/* System Trust Badges */}
-        <div className="pt-8 flex flex-wrap items-center justify-center gap-6 text-xs font-mono text-[#84958A]">
-          <div className="flex items-center gap-2">
-            <CheckCircle2 className="h-3.5 w-3.5 text-[#00F2A9]" />
-            <span>Tanpa Biaya Admin</span>
-          </div>
-          <span className="text-[#3B4A41]">•</span>
-          <div className="flex items-center gap-2">
-            <Zap className="h-3.5 w-3.5 text-[#00F2A9]" />
-            <span>Pencatatan Realtime Instan</span>
-          </div>
-          <span className="text-[#3B4A41]">•</span>
-          <div className="flex items-center gap-2">
-            <Shield className="h-3.5 w-3.5 text-[#00F2A9]" />
-            <span>Didukung BUMDes Pekon</span>
-          </div>
-        </div>
+
 
       </div>
     </section>

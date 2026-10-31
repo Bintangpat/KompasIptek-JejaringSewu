@@ -83,7 +83,7 @@ export function ImpactPillarsSection() {
                     {item.title}
                   </h3>
                 </div>
-                <span className={`self-start sm:self-center font-mono text-[11px] font-semibold px-2.5 py-0.5 rounded border ${item.badgeColor}`}>
+                <span className={`self-start sm:self-center font-mono text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${item.badgeColor}`}>
                   {item.badge}
                 </span>
               </div>
