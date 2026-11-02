@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Param,
   Body,
@@ -53,5 +54,37 @@ export class CreditScoringController {
     @Body() dto: ApproveLoanDto,
   ) {
     return this.creditScoringService.approveLoan(adminId, loanId, dto);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN_BUMDES, Role.ADMIN_BAPPERIDA, Role.SUPER_ADMIN)
+  @Get('loans/active')
+  async getActiveLoans(
+    @Query('pekonId') pekonId?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.creditScoringService.getActiveLoans(pekonId, status);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN_BUMDES, Role.SUPER_ADMIN)
+  @Post('loans/:id/disburse')
+  @HttpCode(HttpStatus.OK)
+  async disburseLoan(
+    @CurrentUser('userId') adminId: string,
+    @Param('id') loanId: string,
+  ) {
+    return this.creditScoringService.disburseLoan(loanId, adminId);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN_BUMDES, Role.SUPER_ADMIN)
+  @Post('loans/:id/repay')
+  @HttpCode(HttpStatus.OK)
+  async repayLoan(
+    @CurrentUser('userId') adminId: string,
+    @Param('id') loanId: string,
+  ) {
+    return this.creditScoringService.repayLoan(loanId, adminId);
   }
 }

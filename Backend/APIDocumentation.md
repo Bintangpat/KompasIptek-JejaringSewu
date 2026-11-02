@@ -89,12 +89,60 @@ Semua kegagalan HTTP dan validasi ditangkap oleh `AllExceptionsFilter` dan menge
 ### 2.2. Login Akun (Nomor WhatsApp / Email)
 - **Endpoint:** `POST /api/v1/auth/login`
 - **Autentikasi:** Public
+- **Request Headers yang Didukung:**
+  - `Content-Type: application/json`
+  - `X-Device-Id: <deviceId>` *(Opsional, identifier perangkat klien via HTTP header)*
 - **Request Body (JSON):**
   | Field | Tipe | Validasi | Keterangan |
   |---|---|---|---|
   | `identifier` | `string` | Wajib, string tidak kosong | Nomor WhatsApp atau Email terdaftar. |
   | `password` | `string` | Wajib, Min 8 karakter | Kata sandi akun. |
-  | `deviceId` | `string` | Wajib, string | Identifier unik perangkat (Expo Device ID). |
+  | `deviceId` | `string` | Opsional di DTO, Sangat Direkomendasikan | Identifier unik perangkat seluler (`mobile_<UUID>`). |
+
+> #### 📱 Alur Teknis & Implementasi Device ID pada Mobile Client
+> 
+> Backend NestJS mengidentifikasi sesi login berdasarkan `deviceId` untuk pencatatan riwayat sesi pengguna, audit trail transaksi dompet, mitigasi login akun ganda ilegal, dan pengikatan push notification OTP.
+> 
+> Pada klien mobile (React Native Expo), `deviceId` dibangkitkan sekali menggunakan `expo-crypto` dan disimpan secara persisten di hardware-backed secure storage (`expo-secure-store`). Pola implementasi fungsi:
+> 
+> ```typescript
+> import * as Crypto from 'expo-crypto';
+> import { SecureStorage } from '../../services/secure-storage';
+> import { STORAGE_KEYS } from '../../lib/constants';
+> 
+> async function getOrCreateDeviceId(): Promise<string> {
+>   let deviceId = await SecureStorage.getItem(STORAGE_KEYS.DEVICE_ID);
+>   if (!deviceId) {
+>     deviceId = `mobile_${Crypto.randomUUID().substring(0, 8)}`;
+>     await SecureStorage.setItem(STORAGE_KEYS.DEVICE_ID, deviceId);
+>   }
+>   return deviceId;
+> }
+> 
+> export const authApi = {
+>   async login(payload: LoginRequest): Promise<ApiResponse<LoginResponse>> {
+>     const deviceId = payload.deviceId || (await getOrCreateDeviceId());
+>     const res = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', {
+>       ...payload,
+>       deviceId,
+>     });
+>     return res.data;
+>   },
+> };
+> ```
+> 
+> **Mekanisme Dual-Channel & Resolusi Fallback di Backend (`auth.controller.ts`):**
+> 1. **Channel 1 (Payload Body):** Klien menyertakan `deviceId` di dalam JSON body request `POST /auth/login`.
+> 2. **Channel 2 (HTTP Header):** Interceptor Axios `apiClient` juga menempelkan header `X-Device-Id: <deviceId>` pada setiap outgoing request.
+> 3. **Resolusi Server:**
+>    ```typescript
+>    dto.deviceId =
+>      dto.deviceId ||
+>      (req.headers['x-device-id'] as string) ||
+>      `device_${req.ip || 'unknown'}`;
+>    ```
+>    Jika aplikasi tidak mengirimkan `deviceId` secara eksplisit, server akan mengutamakan header `X-Device-Id` atau fallback ke identitas IP klien.
+
 - **Headers / Cookie Response:**
   - Mengeset Cookie `jejaring_pringsewu` (HttpOnly, Secure, SameSite=Strict, Path=/api/v1/auth, MaxAge=30 Hari).
 - **Data yang Diambil / Response (200 OK):**
@@ -328,6 +376,25 @@ Semua kegagalan HTTP dan validasi ditangkap oleh `AllExceptionsFilter` dan menge
   }
   ```
   *(Catatan: `isIntegrityValid` bernilai `true` jika tanda tangan kriptografi HMAC-SHA256 pada baris buku besar valid dan tidak mengalami manipulasi).*
+
+---
+
+### 3.6. Daftar Warga Pekon (Otoritas BUMDes & BAPPERIDA)
+- **Endpoint:** `GET /api/v1/users/pekon/:pekonId`
+- **Autentikasi:** `Bearer <accessToken>`
+- **Otorisasi:** `ADMIN_BUMDES`, `ADMIN_BAPPERIDA`, `SUPER_ADMIN`
+- **URL Parameter:** `pekonId` (UUID Pekon)
+- **Query Parameter:** `isNikVerified` (opsional, 'true' | 'false')
+- **Data yang Diambil / Response (200 OK):** Daftar seluruh warga di pekon bersangkutan lengkap dengan NIK verification status, flags kerentanan, data anak balita, dan saldo dompet.
+
+---
+
+### 3.7. Antrean Warga Belum Verifikasi NIK
+- **Endpoint:** `GET /api/v1/users/unverified`
+- **Autentikasi:** `Bearer <accessToken>`
+- **Otorisasi:** `ADMIN_BUMDES`, `ADMIN_BAPPERIDA`, `SUPER_ADMIN`
+- **Query Parameter:** `pekonId` (opsional)
+- **Data yang Diambil / Response (200 OK):** Daftar antrean warga yang memerlukan verifikasi identitas fisik KTP oleh Admin BUMDes setempat (`isNikVerified: false`).
 
 ---
 
@@ -591,6 +658,25 @@ Semua kegagalan HTTP dan validasi ditangkap oleh `AllExceptionsFilter` dan menge
 
 ---
 
+### 7.4. Feed Transaksi Terpadu Pekon (BUMDes & BAPPERIDA)
+- **Endpoint:** `GET /api/v1/transactions/pekon/:pekonId`
+- **Autentikasi:** `Bearer <accessToken>`
+- **Otorisasi:** `ADMIN_BUMDES`, `ADMIN_BAPPERIDA`, `SUPER_ADMIN`
+- **URL Parameter:** `pekonId` (UUID Pekon)
+- **Query Parameter:** `limit` (opsional, default: 20)
+- **Data yang Diambil / Response (200 OK):** Daftar transaksi terpadu di wilayah pekon (Panen, Jastip, Mini-Job, Gizi) lengkap dengan data initiator, counterparty, dan metadata Selfie PoW.
+
+---
+
+### 7.5. Forensik Audit Trail Buku Besar HMAC (BAPPERIDA & BUMDes)
+- **Endpoint:** `GET /api/v1/transactions/audit-trail`
+- **Autentikasi:** `Bearer <accessToken>`
+- **Otorisasi:** `ADMIN_BUMDES`, `ADMIN_BAPPERIDA`, `SUPER_ADMIN`
+- **Query Parameter:** `limit` (opsional, default: 50)
+- **Data yang Diambil / Response (200 OK):** Log riwayat buku besar (*ledger entries*) lengkap dengan kalkulasi validasi tanda tangan integritas HMAC-SHA256 (`isIntegrityValid: boolean`) untuk forensik anti-tampering database tingkat pekon dan kabupaten.
+
+---
+
 ## 8. Modul Skor Kredit Alternatif SPK AHP-TOPSIS (`/api/v1/credit-scoring`)
 
 ### 8.1. Skor Kredit Terkini Saya
@@ -661,6 +747,33 @@ Semua kegagalan HTTP dan validasi ditangkap oleh `AllExceptionsFilter` dan menge
 
 ---
 
+### 8.5. Daftar Pinjaman Aktif & Monitoring Cicilan (BUMDes & BAPPERIDA)
+- **Endpoint:** `GET /api/v1/credit-scoring/loans/active`
+- **Autentikasi:** `Bearer <accessToken>`
+- **Otorisasi:** `ADMIN_BUMDES`, `ADMIN_BAPPERIDA`, `SUPER_ADMIN`
+- **Query Parameters:** `pekonId` (opsional), `status` (opsional: `APPROVED`, `DISBURSED`, `REPAID`)
+- **Data yang Diambil / Response (200 OK):** Daftar seluruh pinjaman modal bergulir desa beserta status pencairan dan rincian penerima.
+
+---
+
+### 8.6. Pencairan Modal Kerja oleh BUMDes
+- **Endpoint:** `POST /api/v1/credit-scoring/loans/:id/disburse`
+- **Autentikasi:** `Bearer <accessToken>`
+- **Otorisasi:** `ADMIN_BUMDES`, `SUPER_ADMIN`
+- **URL Parameter:** `id` (UUID Rekomendasi Pinjaman)
+- **Data yang Diambil / Response (200 OK):** Mengubah status pinjaman menjadi `DISBURSED` setelah dana disalurkan.
+
+---
+
+### 8.7. Pencatatan Pelunasan Pinjaman Modal oleh BUMDes
+- **Endpoint:** `POST /api/v1/credit-scoring/loans/:id/repay`
+- **Autentikasi:** `Bearer <accessToken>`
+- **Otorisasi:** `ADMIN_BUMDES`, `SUPER_ADMIN`
+- **URL Parameter:** `id` (UUID Rekomendasi Pinjaman)
+- **Data yang Diambil / Response (200 OK):** Mengubah status pinjaman menjadi `REPAID` setelah kewajiban pinjaman diselesaikan warga.
+
+---
+
 ## 9. Modul Intervensi Gizi & Penanganan Stunting (`/api/v1/nutrition`)
 
 ### 9.1. Katalog Paket Pangan Bergizi Lokal
@@ -718,3 +831,52 @@ Semua kegagalan HTTP dan validasi ditangkap oleh `AllExceptionsFilter` dan menge
 - **Endpoint:** `GET /api/v1/nutrition/redemptions/me`
 - **Autentikasi:** `Bearer <accessToken>`
 - **Data yang Diambil / Response (200 OK):** Riwayat penukaran paket gizi pengguna yang memuat nama paket, tanggal penukaran, jumlah poin terpakai, dan status klaim.
+
+---
+
+### 9.4. Tambah Stok Paket Gizi oleh BUMDes
+- **Endpoint:** `PATCH /api/v1/nutrition/packages/:id/restock`
+- **Autentikasi:** `Bearer <accessToken>`
+- **Otorisasi:** `ADMIN_BUMDES`, `SUPER_ADMIN`
+- **URL Parameter:** `id` (UUID Paket Gizi)
+- **Request Body (JSON):**
+  | Field | Tipe | Validasi | Keterangan |
+  |---|---|---|---|
+  | `additionalStock` | `number` | Wajib, Integer Min 1 | Jumlah unit paket gizi yang ditambahkan ke stok desa. |
+- **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "packageId": "uuid-pkg",
+    "packageName": "Paket Gizi Stunting A",
+    "newStockCount": 65,
+    "message": "Berhasil menambahkan 15 stok paket gizi."
+  }
+  ```
+
+---
+
+### 9.5. Antrean Penukaran Paket Gizi Pekon (BUMDes)
+- **Endpoint:** `GET /api/v1/nutrition/redemptions/pekon/:pekonId`
+- **Autentikasi:** `Bearer <accessToken>`
+- **Otorisasi:** `ADMIN_BUMDES`, `SUPER_ADMIN`
+- **URL Parameter:** `pekonId` (UUID Pekon)
+- **Data yang Diambil / Response (200 OK):** Daftar antrean warga yang telah menukarkan poin gizi dan menunggu serah terima fisik paket di kantor BUMDes/posyandu setempat.
+
+---
+
+### 9.6. Konfirmasi Serah Terima Fisik Paket Gizi
+- **Endpoint:** `PATCH /api/v1/nutrition/redemptions/:id/complete`
+- **Autentikasi:** `Bearer <accessToken>`
+- **Otorisasi:** `ADMIN_BUMDES`, `SUPER_ADMIN`
+- **URL Parameter:** `id` (UUID Penukaran Paket)
+- **Response (200 OK):**
+  ```json
+  {
+    "success": true,
+    "redemptionId": "uuid-redemption",
+    "status": "COMPLETED",
+    "message": "Paket pangan bergizi sukses diserahterimakan kepada warga."
+  }
+  ```
+

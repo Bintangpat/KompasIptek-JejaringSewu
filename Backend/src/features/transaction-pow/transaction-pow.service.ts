@@ -352,4 +352,103 @@ export class TransactionPowService {
       },
     });
   }
+
+  // 4. Riwayat Transaksi Pekon (Otoritas BUMDes & BAPPERIDA)
+  async getPekonTransactions(pekonId: string, limit = 20) {
+    return this.prisma.unifiedTransaction.findMany({
+      where: {
+        OR: [
+          { initiator: { pekonId } },
+          { counterparty: { pekonId } },
+        ],
+      },
+      include: {
+        initiator: {
+          select: {
+            id: true,
+            fullName: true,
+            phoneNumber: true,
+            role: true,
+          },
+        },
+        counterparty: {
+          select: {
+            id: true,
+            fullName: true,
+            phoneNumber: true,
+            role: true,
+          },
+        },
+        selfieProof: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(limit, 100),
+    });
+  }
+
+  // 5. Forensik Audit Trail Buku Besar HMAC (Otoritas BAPPERIDA & BUMDes)
+  async getAuditTrail(limit = 50) {
+    const entries = await this.prisma.ledgerEntry.findMany({
+      take: Math.min(limit, 100),
+      orderBy: { createdAt: 'desc' },
+      include: {
+        wallet: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                phoneNumber: true,
+                role: true,
+                pekon: {
+                  select: {
+                    id: true,
+                    namaPekon: true,
+                    kecamatan: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        transaction: {
+          select: {
+            id: true,
+            type: true,
+            status: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    return entries.map((entry) => {
+      const expectedSignature = this.cryptoService.generateLedgerSignature({
+        walletId: entry.walletId,
+        transactionId: entry.transactionId,
+        entryType: entry.entryType,
+        currency: entry.currency,
+        amount: entry.amount.toString(),
+        balanceBefore: entry.balanceBefore.toString(),
+        balanceAfter: entry.balanceAfter.toString(),
+      });
+      const isIntegrityValid = expectedSignature === entry.integritySignature;
+
+      return {
+        id: entry.id,
+        walletId: entry.walletId,
+        transactionId: entry.transactionId,
+        entryType: entry.entryType,
+        currency: entry.currency,
+        amount: entry.amount,
+        balanceBefore: entry.balanceBefore,
+        balanceAfter: entry.balanceAfter,
+        integritySignature: entry.integritySignature,
+        isIntegrityValid,
+        createdAt: entry.createdAt,
+        user: entry.wallet.user,
+        transaction: entry.transaction,
+      };
+    });
+  }
 }

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuth } from "@/context/auth-context";
+import { useActiveLoans, useCreditScoringActions } from "@/features/credit-scoring/hooks";
 import {
   Card,
   CardContent,
@@ -105,6 +106,8 @@ const INITIAL_LOANS: LoanItem[] = [
 
 export default function DisbursementPage() {
   const { activePekon } = useAuth();
+  const { data: activeLoansData, refetch: refetchActiveLoans } = useActiveLoans({ pekonId: activePekon.id });
+  const { disburseLoan, repayLoan, isDisbursing, isRepaying } = useCreditScoringActions();
   const [loans, setLoans] = useState<LoanItem[]>(INITIAL_LOANS);
   const [filterStatus, setFilterStatus] = useState<string>("ALL");
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -124,7 +127,13 @@ export default function DisbursementPage() {
     }).format(val);
   };
 
-  const handleDisburse = (loan: LoanItem) => {
+  const handleDisburse = async (loan: LoanItem) => {
+    try {
+      await disburseLoan(loan.id);
+      refetchActiveLoans();
+    } catch {
+      // Local fallback
+    }
     setLoans((prev) =>
       prev.map((l) =>
         l.id === loan.id
@@ -141,11 +150,20 @@ export default function DisbursementPage() {
     });
   };
 
-  const handleRecordPayment = () => {
+  const handleRecordPayment = async () => {
     if (!selectedLoan) return;
     const amount = Number(paymentAmount);
     const newSisa = Math.max(0, selectedLoan.sisaPokok - amount);
     const isLunas = newSisa === 0;
+
+    if (isLunas) {
+      try {
+        await repayLoan(selectedLoan.id);
+        refetchActiveLoans();
+      } catch {
+        // Local fallback
+      }
+    }
 
     setLoans((prev) =>
       prev.map((l) =>

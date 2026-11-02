@@ -22,7 +22,14 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        (process.env.NODE_ENV !== 'production' &&
+          (origin.startsWith('exp://') ||
+            origin.startsWith('http://192.168.') ||
+            origin.startsWith('http://localhost:')))
+      ) {
         callback(null, true);
       } else {
         callback(new Error('Blocked by CORS Policy: Untrusted Origin'));
@@ -30,7 +37,13 @@ async function bootstrap() {
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Idempotency-Key', 'X-Image-Hash'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Idempotency-Key',
+      'X-Image-Hash',
+      'X-Device-Id',
+    ],
   });
 
   // 4. Global API Prefix

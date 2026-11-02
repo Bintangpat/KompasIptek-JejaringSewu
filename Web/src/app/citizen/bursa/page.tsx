@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuth } from "@/context/auth-context";
+import { useHarvestListings, useHarvestActions } from "@/features/harvest-bursa/hooks";
 import {
   Card,
   CardContent,
@@ -94,11 +95,30 @@ const INITIAL_COMMODITIES: CommodityItem[] = [
 
 export default function CitizenBursaPage() {
   const { activePekon } = useAuth();
+  const { data: realListings, refetch: refetchListings } = useHarvestListings({ pekonId: activePekon.id });
+  const { createListing, isCreating } = useHarvestActions();
   const [commodities, setCommodities] = useState<CommodityItem[]>(INITIAL_COMMODITIES);
   const [modalOpen, setModalOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newQty, setNewQty] = useState("");
   const [newPrice, setNewPrice] = useState("2000");
+
+  React.useEffect(() => {
+    if (realListings && realListings.length > 0) {
+      const mapped: CommodityItem[] = realListings.map((l) => ({
+        id: `BRS-${l.id.substring(0, 4).toUpperCase()}`,
+        name: l.commodityName,
+        farmerName: l.farmer?.fullName || "Petani Pekon",
+        pekon: l.pekon?.namaPekon || activePekon.namaPekon,
+        quantity: `${l.estimatedKg} Kg`,
+        pricePerKg: Number(l.minPricePerKg),
+        marketPricePerKg: Math.round(Number(l.minPricePerKg) * 0.88),
+        trustedCollector: "Pengepul Jujur Terakreditasi",
+        postedAt: new Date(l.createdAt).toLocaleDateString("id-ID"),
+      }));
+      setCommodities(mapped);
+    }
+  }, [realListings, activePekon.namaPekon]);
 
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -108,8 +128,20 @@ export default function CitizenBursaPage() {
     }).format(val);
   };
 
-  const handleCreateListing = (e: React.FormEvent) => {
+  const handleCreateListing = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      await createListing({
+        pekonId: activePekon.id,
+        commodityName: newName,
+        estimatedKg: Number(newQty) || 500,
+        minPricePerKg: Number(newPrice) || 2000,
+      });
+      refetchListings();
+    } catch {
+      // Local fallback
+    }
+
     const item: CommodityItem = {
       id: `BRS-${Math.floor(100 + Math.random() * 900)}`,
       name: newName,

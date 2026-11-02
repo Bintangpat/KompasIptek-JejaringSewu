@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuth } from "@/context/auth-context";
+import { useMiniJobs, useMiniJobActions } from "@/features/mini-job/hooks";
 import {
   Card,
   CardContent,
@@ -72,7 +73,25 @@ const INITIAL_CITIZEN_JOBS: CitizenJobItem[] = [
 
 export default function CitizenMiniJobPage() {
   const { activePekon, user } = useAuth();
+  const { data: realJobs, refetch: refetchJobs } = useMiniJobs();
+  const { claimJob, isClaiming } = useMiniJobActions();
   const [jobs, setJobs] = useState<CitizenJobItem[]>(INITIAL_CITIZEN_JOBS);
+
+  React.useEffect(() => {
+    if (realJobs && realJobs.length > 0) {
+      const mapped: CitizenJobItem[] = realJobs.map((j) => ({
+        id: j.id,
+        title: j.title,
+        category: "Tugas Mikro Desa",
+        description: j.description,
+        rewardCash: Number(j.wageAmount),
+        rewardPoints: 10,
+        isDisabilityFriendly: j.isDisabilityFriendly,
+        status: j.workerId === user.id ? "CLAIMED_BY_ME" : (j.status as any) || "OPEN",
+      }));
+      setJobs(mapped);
+    }
+  }, [realJobs, user.id]);
 
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -82,7 +101,14 @@ export default function CitizenMiniJobPage() {
     }).format(val);
   };
 
-  const handleClaim = (job: CitizenJobItem) => {
+  const handleClaim = async (job: CitizenJobItem) => {
+    try {
+      await claimJob(job.id);
+      refetchJobs();
+    } catch {
+      // Local fallback
+    }
+
     setJobs((prev) =>
       prev.map((j) => (j.id === job.id ? { ...j, status: "CLAIMED_BY_ME" } : j))
     );

@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../../core/database/prisma.service';
 import { UsersWalletService } from '../users-wallet/users-wallet.service';
 import { CryptoService } from '../../core/crypto/crypto.service';
-import { RedeemPackageDto, PackageQueryDto } from './dto/nutrition.dto';
+import { RedeemPackageDto, PackageQueryDto, RestockPackageDto } from './dto/nutrition.dto';
 
 @Injectable()
 export class NutritionStuntingService {
@@ -160,5 +160,104 @@ export class NutritionStuntingService {
         isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
+  }
+
+  // 4. Tambah Stok Paket Gizi oleh BUMDes
+  async restockPackage(packageId: string, dto: RestockPackageDto) {
+    const pkg = await this.prisma.nutritionPackage.findUnique({
+      where: { id: packageId },
+    });
+
+    if (!pkg) {
+      throw new NotFoundException({
+        errorCode: 'ERR_RESOURCE_NOT_FOUND',
+        message: 'Paket gizi tidak ditemukan.',
+      });
+    }
+
+    const updated = await this.prisma.nutritionPackage.update({
+      where: { id: packageId },
+      data: {
+        stockCount: {
+          increment: dto.additionalStock,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      packageId: updated.id,
+      packageName: updated.packageName,
+      newStockCount: updated.stockCount,
+      message: `Berhasil menambahkan ${dto.additionalStock} stok paket gizi.`,
+    };
+  }
+
+  // 5. Antrean Penukaran Paket Gizi per Pekon (Otoritas BUMDes)
+  async getRedemptionsByPekon(pekonId: string) {
+    return this.prisma.nutritionRedemption.findMany({
+      where: {
+        package: {
+          pekonId,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            phoneNumber: true,
+            isNikVerified: true,
+            vulnerabilityFlags: true,
+            hasToddler: true,
+          },
+        },
+        package: {
+          select: {
+            id: true,
+            packageName: true,
+            pointsCost: true,
+            stockCount: true,
+          },
+        },
+      },
+      orderBy: { redeemedAt: 'desc' },
+    });
+  }
+
+  // 6. Konfirmasi Serah Terima Fisik Paket Gizi oleh BUMDes
+  async completeRedemption(redemptionId: string) {
+    const redemption = await this.prisma.nutritionRedemption.findUnique({
+      where: { id: redemptionId },
+      include: { package: true, user: true },
+    });
+
+    if (!redemption) {
+      throw new NotFoundException({
+        errorCode: 'ERR_RESOURCE_NOT_FOUND',
+        message: 'Data penukaran tidak ditemukan.',
+      });
+    }
+
+    if (redemption.status === 'COMPLETED') {
+      return {
+        success: true,
+        redemptionId: redemption.id,
+        status: 'COMPLETED',
+        message: 'Paket telah diserahterimakan sebelumnya.',
+      };
+    }
+
+    const updated = await this.prisma.nutritionRedemption.update({
+      where: { id: redemptionId },
+      data: { status: 'COMPLETED' },
+    });
+
+    return {
+      success: true,
+      redemptionId: updated.id,
+      status: updated.status,
+      message: 'Paket pangan bergizi sukses diserahterimakan kepada warga.',
+    };
   }
 }

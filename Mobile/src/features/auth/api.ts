@@ -11,10 +11,26 @@ import {
   GoogleLoginRequest,
 } from './types';
 import { User, Pekon } from '../../types/entities';
+import { SecureStorage } from '../../services/secure-storage';
+import { STORAGE_KEYS } from '../../lib/constants';
+import * as Crypto from 'expo-crypto';
+
+async function getOrCreateDeviceId(): Promise<string> {
+  let deviceId = await SecureStorage.getItem(STORAGE_KEYS.DEVICE_ID);
+  if (!deviceId) {
+    deviceId = `mobile_${Crypto.randomUUID().substring(0, 8)}`;
+    await SecureStorage.setItem(STORAGE_KEYS.DEVICE_ID, deviceId);
+  }
+  return deviceId;
+}
 
 export const authApi = {
   async login(payload: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-    const res = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', payload);
+    const deviceId = payload.deviceId || (await getOrCreateDeviceId());
+    const res = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', {
+      ...payload,
+      deviceId,
+    });
     return res.data;
   },
 
@@ -24,7 +40,11 @@ export const authApi = {
   },
 
   async googleLogin(payload: GoogleLoginRequest): Promise<ApiResponse<LoginResponse>> {
-    const res = await apiClient.post<ApiResponse<LoginResponse>>('/auth/google', payload);
+    const deviceId = payload.deviceId || (await getOrCreateDeviceId());
+    const res = await apiClient.post<ApiResponse<LoginResponse>>('/auth/google', {
+      ...payload,
+      deviceId,
+    });
     return res.data;
   },
 

@@ -4,6 +4,8 @@ import React from "react";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuth } from "@/context/auth-context";
+import { usePekonTransactions } from "@/features/transaction-pow/hooks";
+import { usePekonCitizens } from "@/features/users-wallet/hooks";
 import { EconomicVelocityChart } from "@/components/charts/economic-velocity-chart";
 import {
   Card,
@@ -36,8 +38,10 @@ import {
 
 export default function BumdesOverviewPage() {
   const { activePekon } = useAuth();
+  const { data: pekonTxs, isLoading: isLoadingTxs } = usePekonTransactions(activePekon.id);
+  const { data: citizens } = usePekonCitizens(activePekon.id);
 
-  const recentTransactions = [
+  const defaultMockTransactions = [
     {
       id: "TRX-7821",
       modul: "Hasil Bumi",
@@ -84,6 +88,25 @@ export default function BumdesOverviewPage() {
       waktu: "3 jam lalu",
     },
   ];
+
+  const recentTransactions = pekonTxs && pekonTxs.length > 0
+    ? pekonTxs.map((tx) => ({
+        id: `TRX-${tx.id.substring(0, 4).toUpperCase()}`,
+        modul:
+          tx.type === "HARVEST_DEAL"
+            ? "Hasil Bumi"
+            : tx.type === "NEBENG_JASTIP"
+            ? "Nebeng-Jastip"
+            : tx.type === "MINI_JOB"
+            ? "Mini-Job"
+            : "Paket Gizi",
+        warga: tx.initiator?.fullName || "Warga Pekon",
+        nominal: `Rp ${Number(tx.grossAmount || 0).toLocaleString("id-ID")}`,
+        poin: tx.selfieProof ? "+10 Pts" : "+0 Pts",
+        statusPoW: tx.selfieProof ? "VERIFIED_GEOTAG" : "PENDING_REVIEW",
+        waktu: new Date(tx.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+      }))
+    : defaultMockTransactions;
 
   return (
     <DashboardLayout>

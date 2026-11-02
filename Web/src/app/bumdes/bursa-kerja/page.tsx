@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuth } from "@/context/auth-context";
+import { useMiniJobs, useMiniJobActions } from "@/features/mini-job/hooks";
 import {
   Card,
   CardContent,
@@ -112,6 +113,8 @@ const INITIAL_JOBS: MiniJobItem[] = [
 
 export default function BursaKerjaPage() {
   const { activePekon } = useAuth();
+  const { data: realJobs, refetch: refetchJobs } = useMiniJobs();
+  const { createJob, isCreating } = useMiniJobActions();
   const [jobs, setJobs] = useState<MiniJobItem[]>(INITIAL_JOBS);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newTitle, setNewTitle] = useState("");
@@ -119,6 +122,24 @@ export default function BursaKerjaPage() {
   const [newCash, setNewCash] = useState("65000");
   const [newPoints, setNewPoints] = useState("8");
   const [newDisability, setNewDisability] = useState(true);
+
+  React.useEffect(() => {
+    if (realJobs && realJobs.length > 0) {
+      const mapped: MiniJobItem[] = realJobs.map((j) => ({
+        id: j.id,
+        title: j.title,
+        category: "Tugas Mikro Desa",
+        rewardCash: Number(j.wageAmount),
+        rewardPoints: 10,
+        isDisabilityFriendly: j.isDisabilityFriendly,
+        requiresPoW: true,
+        status: (j.status as any) || "OPEN",
+        claimedBy: j.worker?.fullName || null,
+        pekon: activePekon.namaPekon,
+      }));
+      setJobs(mapped);
+    }
+  }, [realJobs, activePekon.namaPekon]);
 
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -128,8 +149,20 @@ export default function BursaKerjaPage() {
     }).format(val);
   };
 
-  const handleCreateJob = (e: React.FormEvent) => {
+  const handleCreateJob = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      await createJob({
+        title: newTitle,
+        description: `Tugas ${newTitle} untuk wilayah ${activePekon.namaPekon}`,
+        wageAmount: Number(newCash),
+        isDisabilityFriendly: newDisability,
+      });
+      refetchJobs();
+    } catch {
+      // Local fallback
+    }
+
     const newJob: MiniJobItem = {
       id: `JOB-${Math.floor(100 + Math.random() * 900)}`,
       title: newTitle,

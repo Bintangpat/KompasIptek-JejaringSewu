@@ -29,6 +29,7 @@ import {
   WalletIcon,
   CoinsIcon,
   ShieldCheckIcon,
+  ShieldAlertIcon,
   RepeatIcon,
 } from "lucide-react";
 
@@ -57,6 +58,7 @@ export function NavUser({
     ADMIN_BUMDES: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
     ADMIN_BAPPERIDA: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30",
     WARGA: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30",
+    PENGEPUL: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
     PENGUMPUL_JUJUR: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30",
     UMKM: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30",
     SUPER_ADMIN: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30",
@@ -150,6 +152,19 @@ export function NavUser({
               Ganti Peran Akun (Zero-Auth):
             </DropdownMenuLabel>
             <DropdownMenuGroup>
+              <DropdownMenuItem
+                className="cursor-pointer text-xs flex items-center justify-between"
+                onClick={() => switchRole("SUPER_ADMIN")}
+              >
+                <div className="flex items-center gap-2">
+                  <ShieldAlertIcon className="h-3.5 w-3.5 text-rose-500" />
+                  <span>Super Admin</span>
+                </div>
+                {activeRole === "SUPER_ADMIN" && (
+                  <Badge variant="outline" className="text-[10px] h-4 text-rose-500 border-rose-500">Aktif</Badge>
+                )}
+              </DropdownMenuItem>
+
               <DropdownMenuItem
                 className="cursor-pointer text-xs flex items-center justify-between"
                 onClick={() => switchRole("ADMIN_BUMDES")}

@@ -156,4 +156,100 @@ export class CreditScoringService {
       message: 'Pinjaman modal tanpa agunan BUMDes berhasil disetujui.',
     };
   }
+
+  // 5. Daftar Pinjaman Aktif & Pencairan (BUMDes & BAPPERIDA)
+  async getActiveLoans(pekonId?: string, status?: string) {
+    const where: Prisma.LoanRecommendationWhereInput = {};
+    if (status) {
+      where.status = status;
+    } else {
+      where.status = { in: ['APPROVED', 'DISBURSED', 'REPAID'] };
+    }
+    if (pekonId) {
+      where.user = { pekonId };
+    }
+    return this.prisma.loanRecommendation.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            phoneNumber: true,
+            isNikVerified: true,
+            vulnerabilityFlags: true,
+            pekon: {
+              select: {
+                id: true,
+                namaPekon: true,
+                kecamatan: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // 6. Pencairan Modal Kerja BUMDes
+  async disburseLoan(loanId: string, adminId: string) {
+    const loan = await this.prisma.loanRecommendation.findUnique({
+      where: { id: loanId },
+    });
+    if (!loan) {
+      throw new NotFoundException({
+        errorCode: 'ERR_RESOURCE_NOT_FOUND',
+        message: 'Rekomendasi pinjaman tidak ditemukan.',
+      });
+    }
+    if (loan.status !== 'APPROVED') {
+      throw new ConflictException({
+        errorCode: 'ERR_CONFLICT_STATE',
+        message: 'Hanya pinjaman berstatus APPROVED yang dapat dicairkan.',
+      });
+    }
+    const updatedLoan = await this.prisma.loanRecommendation.update({
+      where: { id: loanId },
+      data: {
+        status: 'DISBURSED',
+      },
+    });
+    return {
+      loanId: updatedLoan.id,
+      status: updatedLoan.status,
+      message: 'Modal kerja BUMDes berhasil dicairkan kepada warga.',
+    };
+  }
+
+  // 7. Pencatatan Pelunasan Pinjaman BUMDes
+  async repayLoan(loanId: string, adminId: string) {
+    const loan = await this.prisma.loanRecommendation.findUnique({
+      where: { id: loanId },
+    });
+    if (!loan) {
+      throw new NotFoundException({
+        errorCode: 'ERR_RESOURCE_NOT_FOUND',
+        message: 'Rekomendasi pinjaman tidak ditemukan.',
+      });
+    }
+    if (loan.status !== 'DISBURSED') {
+      throw new ConflictException({
+        errorCode: 'ERR_CONFLICT_STATE',
+        message:
+          'Hanya pinjaman yang telah dicairkan (DISBURSED) yang dapat dicatat pelunasannya.',
+      });
+    }
+    const updatedLoan = await this.prisma.loanRecommendation.update({
+      where: { id: loanId },
+      data: {
+        status: 'REPAID',
+      },
+    });
+    return {
+      loanId: updatedLoan.id,
+      status: updatedLoan.status,
+      message: 'Pelunasan pinjaman modal BUMDes berhasil dicatat.',
+    };
+  }
 }

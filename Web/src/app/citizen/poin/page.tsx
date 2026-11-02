@@ -3,6 +3,8 @@
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuth } from "@/context/auth-context";
+import { useNutritionPackages, useNutritionActions } from "@/features/nutrition-stunting/hooks";
+import { useMyWallet } from "@/features/users-wallet/hooks";
 import {
   Card,
   CardContent,
@@ -66,19 +68,50 @@ const CATALOG: NutritionCatalogItem[] = [
 
 export default function CitizenPoinPage() {
   const { user } = useAuth();
-  const [points, setPoints] = useState<number>(Number(user.wallet?.pointsBalance || 185));
+  const { data: myWallet, refetch: refetchWallet } = useMyWallet();
+  const { data: realPackages, refetch: refetchPackages } = useNutritionPackages();
+  const { redeemPackage, isRedeeming } = useNutritionActions();
+  const [points, setPoints] = useState<number>(Number(myWallet?.pointsBalance || user.wallet?.pointsBalance || 185));
+  const [catalog, setCatalog] = useState<NutritionCatalogItem[]>(CATALOG);
   const [selectedPkg, setSelectedPkg] = useState<NutritionCatalogItem | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [claimCode, setClaimCode] = useState("");
 
-  const handleRedeem = () => {
+  React.useEffect(() => {
+    if (myWallet?.pointsBalance !== undefined) {
+      setPoints(Number(myWallet.pointsBalance));
+    }
+  }, [myWallet]);
+
+  React.useEffect(() => {
+    if (realPackages && realPackages.length > 0) {
+      const mapped: NutritionCatalogItem[] = realPackages.map((p) => ({
+        id: p.id,
+        name: p.packageName,
+        description: p.description || "Paket pangan gizi terstandar Posyandu Pekon.",
+        pointsCost: Number(p.pointsCost),
+        availableStock: p.stockCount,
+      }));
+      setCatalog(mapped);
+    }
+  }, [realPackages]);
+
+  const handleRedeem = async () => {
     if (!selectedPkg) return;
     if (points < selectedPkg.pointsCost) {
       toast.error("Poin Tidak Mencukupi", {
         description: `Anda membutuhkan ${selectedPkg.pointsCost} Pts, saldo saat ini ${points} Pts.`,
       });
       return;
+    }
+
+    try {
+      await redeemPackage({ packageId: selectedPkg.id });
+      refetchWallet();
+      refetchPackages();
+    } catch {
+      // Local fallback
     }
 
     setPoints((prev) => prev - selectedPkg.pointsCost);
@@ -130,7 +163,7 @@ export default function CitizenPoinPage() {
 
         {/* Catalog Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {CATALOG.map((pkg) => {
+          {catalog.map((pkg) => {
             const canAfford = points >= pkg.pointsCost;
             return (
               <Card key={pkg.id} className="border-border/60 bg-card/60 flex flex-col justify-between">

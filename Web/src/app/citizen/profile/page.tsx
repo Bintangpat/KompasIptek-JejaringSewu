@@ -4,6 +4,8 @@ import React from "react";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuth } from "@/context/auth-context";
+import { useMyProfile, useMyWallet } from "@/features/users-wallet/hooks";
+import { useMyCreditScore } from "@/features/credit-scoring/hooks";
 import {
   Card,
   CardContent,
@@ -31,10 +33,14 @@ import {
 } from "lucide-react";
 
 export default function CitizenProfilePage() {
-  const { user, activePekon } = useAuth();
+  const { user: authUser, activePekon } = useAuth();
+  const { data: profile } = useMyProfile();
+  const { data: wallet } = useMyWallet();
+  const { data: creditScoreData } = useMyCreditScore();
 
-  const creditScore = 89.4;
-  const grade = "GRADE_A_LAYAK_MODAL";
+  const user = profile || authUser;
+  const creditScore = Number(creditScoreData?.totalSkredit || creditScoreData?.score || 89.4);
+  const grade = creditScoreData?.grade || "GRADE_A_LAYAK_MODAL";
 
   const formatRupiah = (val?: string | number) => {
     const num = Number(val || 0);
@@ -112,7 +118,7 @@ export default function CitizenProfilePage() {
                   Saldo Kas Tunai
                 </span>
                 <div className="text-lg font-bold text-foreground font-mono mt-0.5">
-                  {formatRupiah(user.wallet?.cashBalance)}
+                  {formatRupiah(wallet?.cashBalance || user.wallet?.cashBalance)}
                 </div>
               </div>
 
@@ -122,7 +128,7 @@ export default function CitizenProfilePage() {
                   Saldo Poin Kebaikan
                 </span>
                 <div className="text-lg font-bold text-amber-500 font-mono mt-0.5">
-                  {user.wallet?.pointsBalance || 0} Pts
+                  {wallet?.pointsBalance || user.wallet?.pointsBalance || 0} Pts
                 </div>
               </div>
             </CardContent>

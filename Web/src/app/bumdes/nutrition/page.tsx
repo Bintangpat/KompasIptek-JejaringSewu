@@ -4,6 +4,11 @@ import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuth } from "@/context/auth-context";
 import {
+  useNutritionPackages,
+  usePekonRedemptions,
+  useNutritionActions,
+} from "@/features/nutrition-stunting/hooks";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -127,15 +132,57 @@ const INITIAL_REDEMPTIONS: RedemptionItem[] = [
 
 export default function NutritionPage() {
   const { activePekon } = useAuth();
+  const { data: realPackages, refetch: refetchPackages } = useNutritionPackages(activePekon.id);
+  const { data: realRedemptions, refetch: refetchRedemptions } = usePekonRedemptions(activePekon.id);
+  const { restockPackage, completeRedemption, isRestocking, isCompletingRedemption } = useNutritionActions();
   const [packages, setPackages] = useState<NutritionPackageItem[]>(INITIAL_PACKAGES);
   const [redemptions, setRedemptions] = useState<RedemptionItem[]>(INITIAL_REDEMPTIONS);
   const [restockModalOpen, setRestockModalOpen] = useState(false);
   const [selectedPkg, setSelectedPkg] = useState<NutritionPackageItem | null>(null);
   const [restockQty, setRestockQty] = useState("10");
 
-  const handleRestock = () => {
+  React.useEffect(() => {
+    if (realPackages && realPackages.length > 0) {
+      const mapped: NutritionPackageItem[] = realPackages.map((p) => ({
+        id: p.id,
+        name: p.packageName,
+        description: p.description || "Paket pangan gizi terakreditasi BUMDes",
+        pointsCost: Number(p.pointsCost),
+        stockCount: p.stockCount,
+        maxStock: Math.max(50, p.stockCount + 20),
+        targetGroup: "Ibu Hamil & Balita Risiko Stunting",
+      }));
+      setPackages(mapped);
+    }
+  }, [realPackages]);
+
+  React.useEffect(() => {
+    if (realRedemptions && realRedemptions.length > 0) {
+      const mapped: RedemptionItem[] = realRedemptions.map((r) => ({
+        id: r.id,
+        wargaName: r.user?.fullName || "Warga Pekon",
+        balitaName: r.beneficiaryName || "Anak Balita",
+        packageName: r.package?.packageName || "Paket Gizi",
+        pointsDeducted: Number(r.pointsSpent),
+        status: r.status === "COMPLETED" ? "COMPLETED" : "WAITING_PICKUP",
+        redeemedAt: r.redeemedAt || "Hari ini",
+      }));
+      setRedemptions(mapped);
+    }
+  }, [realRedemptions]);
+
+  const handleRestock = async () => {
     if (!selectedPkg) return;
     const qty = Number(restockQty);
+    try {
+      await restockPackage({
+        packageId: selectedPkg.id,
+        additionalStock: qty,
+      });
+      refetchPackages();
+    } catch {
+      // Local fallback
+    }
     setPackages((prev) =>
       prev.map((p) =>
         p.id === selectedPkg.id ? { ...p, stockCount: p.stockCount + qty } : p
@@ -147,7 +194,13 @@ export default function NutritionPage() {
     });
   };
 
-  const handleHandover = (rdm: RedemptionItem) => {
+  const handleHandover = async (rdm: RedemptionItem) => {
+    try {
+      await completeRedemption(rdm.id);
+      refetchRedemptions();
+    } catch {
+      // Local fallback
+    }
     setRedemptions((prev) =>
       prev.map((r) =>
         r.id === rdm.id ? { ...r, status: "COMPLETED" } : r

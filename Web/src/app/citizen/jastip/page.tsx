@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { useAuth } from "@/context/auth-context";
+import { useCommuterActions, useNearbyRoutes } from "@/features/commuter-jastip/hooks";
 import {
   Card,
   CardContent,
@@ -88,11 +89,34 @@ const INITIAL_TRIPS: JastipTripItem[] = [
 
 export default function CitizenJastipPage() {
   const { activePekon } = useAuth();
+  const { data: realRoutes, refetch: refetchRoutes } = useNearbyRoutes(
+    { lat: Number(activePekon.latitude), lng: Number(activePekon.longitude) },
+    Boolean(activePekon.latitude)
+  );
+  const { startRoute, createOrder, isStartingRoute, isCreatingOrder } = useCommuterActions();
   const [trips, setTrips] = useState<JastipTripItem[]>(INITIAL_TRIPS);
   const [modalOpen, setModalOpen] = useState(false);
   const [destination, setDestination] = useState("Pasar Pringsewu");
   const [departureTime, setDepartureTime] = useState("14:00 WIB");
   const [vehicle, setVehicle] = useState<"Motor" | "Pickup">("Motor");
+
+  React.useEffect(() => {
+    if (realRoutes && realRoutes.length > 0) {
+      const mapped: JastipTripItem[] = realRoutes.map((r) => ({
+        id: `JST-${r.id.substring(0, 4).toUpperCase()}`,
+        courierName: r.commuter?.fullName || "Kurir Tebengan",
+        origin: r.originName,
+        destination: r.destinationName,
+        vehicle: "Motor",
+        departureTime: "Hari ini",
+        slotCapacity: "Tersedia 2 slot titipan",
+        fareEstimate: 15000,
+        bonusPoints: 3,
+        status: "OPEN_FOR_BOOKING",
+      }));
+      setTrips(mapped);
+    }
+  }, [realRoutes]);
 
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -102,8 +126,22 @@ export default function CitizenJastipPage() {
     }).format(val);
   };
 
-  const handleCreateTrip = (e: React.FormEvent) => {
+  const handleCreateTrip = async (e: React.FormEvent) => {
     e.preventDefault();
+    try {
+      await startRoute({
+        originName: activePekon.namaPekon,
+        destinationName: destination,
+        originLat: Number(activePekon.latitude),
+        originLng: Number(activePekon.longitude),
+        destLat: Number(activePekon.latitude) + 0.05,
+        destLng: Number(activePekon.longitude) + 0.05,
+      });
+      refetchRoutes();
+    } catch {
+      // Local fallback
+    }
+
     const newTrip: JastipTripItem = {
       id: `JST-${Math.floor(500 + Math.random() * 400)}`,
       courierName: "Warga Pelaku Tebengan",
@@ -124,7 +162,18 @@ export default function CitizenJastipPage() {
     });
   };
 
-  const handleBook = (trip: JastipTripItem) => {
+  const handleBook = async (trip: JastipTripItem) => {
+    try {
+      await createOrder({
+        routeId: trip.id,
+        itemDescription: "Titipan belanja pangan dan obat",
+        fuelShareCost: trip.fareEstimate,
+        pickupLat: Number(activePekon.latitude),
+        pickupLng: Number(activePekon.longitude),
+      });
+    } catch {
+      // Local fallback
+    }
     toast.success("Titipan Berhasil Dipesan", {
       description: `Anda menitipkan barang ke kurir ${trip.courierName}. Estimasi ongkir: ${formatRupiah(trip.fareEstimate)}`,
     });

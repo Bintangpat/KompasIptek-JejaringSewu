@@ -209,7 +209,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
 - **Access Token (JWT HS256 15 Menit):** Disahkan menggunakan algoritma HS256 dengan secret key simetris (`JWT_SECRET`), dikirim di dalam body JSON (`accessToken`) untuk disimpan di memori aplikasi (React State / Zustand).
 - **Refresh Token (Opaque Token 30 Hari):** Diset langsung oleh server ke dalam HttpOnly Cookie (`jejaring_pringsewu`), `Secure: true`, `SameSite: 'strict'`, dan `Path: '/api/v1/auth'`. JavaScript klien tidak dapat membaca cookie ini sehingga kebal terhadap pencurian token via Cross-Site Scripting (XSS).
-- **Kirim OTP & Lupa Sandi (FCM Push Notification):** Mengirim OTP 6 digit via Firebase Cloud Messaging (FCM) Push Notification ke perangkat terdaftar. Kode OTP 6 digit dibuat menggunakan `crypto.randomInt(100000, 999999)`, dikirimkan ke perangkat pengguna via FCM, lalu di-hash dengan HMAC-SHA256 dan disimpan di Redis dengan Time-To-Live (TTL) 300 detik (5 menit) serta batas maksimal percobaan gagal sebanyak 3 kali. Nomor HP/WhatsApp tetap disimpan sebagai identitas warga dan keperluan kontak antarpengguna.
+- **Device ID Binding & Sesi Multi-Perangkat:** Setiap request login mengikat sesi ke identifier unik perangkat `deviceId` (`mobile_<UUID>`). Di Mobile Client (React Native Expo), `deviceId` dibangkitkan via `Crypto.randomUUID().substring(0, 8)` dan di-cache persisten di `SecureStore`. Server membaca `deviceId` dari payload body atau header `X-Device-Id`, dengan fallback otomatis ke `device_${req.ip}` jika klien belum mengirimkannya.
+- **Kirim OTP & Lupa Sandi (FCM Push Notification & Outbox Worker):** Mengirim OTP 6 digit via Firebase Cloud Messaging (FCM) Push Notification ke perangkat terdaftar. Kode OTP 6 digit dibuat menggunakan `crypto.randomInt(100000, 999999)`, dimasukkan ke antrean event `OutboxEvent` (`FCM_OTP`), lalu di-hash dengan HMAC-SHA256 dan disimpan di Redis dengan Time-To-Live (TTL) 300 detik (5 menit) serta batas maksimal percobaan gagal sebanyak 3 kali (`@Throttle`). Pada mode Development/Simulasi (saat `FIREBASE_PRIVATE_KEY` masih berupa placeholder), provider `FcmProvider` secara otomatis beralih ke mode simulasi dan mencetak kode OTP ke terminal server tanpa memutus alur pendaftaran.
 
 ### B. Implementasi AuthController & Cookie Handler (src/features/auth/auth.controller.ts)
 
@@ -242,6 +243,11 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    dto.deviceId =
+      dto.deviceId ||
+      (req.headers['x-device-id'] as string) ||
+      `device_${req.ip || 'unknown'}`;
+
     const { accessToken, refreshToken, user } = await this.authService.loginWithIdentifier(dto, req.ip);
     this.setRefreshTokenCookie(res, refreshToken);
     return { accessToken, user };

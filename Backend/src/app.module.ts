@@ -6,6 +6,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './core/database/prisma.module';
 import { RedisModule } from './core/redis/redis.module';
 import { CryptoModule } from './core/crypto/crypto.module';
+import { StorageModule } from './core/storage/storage.module';
 import { AuthModule } from './features/auth/auth.module';
 import { UsersWalletModule } from './features/users-wallet/users-wallet.module';
 import { HarvestBursaModule } from './features/harvest-bursa/harvest-bursa.module';
@@ -47,6 +48,7 @@ import { NotificationsModule } from './features/notifications/notifications.modu
     PrismaModule,
     RedisModule,
     CryptoModule,
+    StorageModule,
 
     // 5. Feature Modules (All 7 Feature Pillars)
     AuthModule,

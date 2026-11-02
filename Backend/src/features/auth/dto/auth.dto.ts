@@ -21,8 +21,9 @@ export class LoginDto {
   @MinLength(8, { message: 'Kata sandi minimal 8 karakter' })
   password: string;
 
+  @IsOptional()
   @IsString()
-  deviceId: string;
+  deviceId?: string;
 }
 
 export class RegisterDto {
@@ -65,8 +66,9 @@ export class GoogleLoginDto {
   @IsString()
   idToken: string; // Token dari Google Sign-In SDK (Mobile / Web)
 
+  @IsOptional()
   @IsString()
-  deviceId: string;
+  deviceId?: string;
 
   @IsUUID('4', { message: 'Pekon ID wajib berformat UUID v4' })
   pekonId: string;

@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as admin from 'firebase-admin';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class FcmProvider {
@@ -8,6 +10,34 @@ export class FcmProvider {
   private firebaseApp: admin.app.App | null = null;
 
   constructor(private readonly configService: ConfigService) {
+    this.initFirebase();
+  }
+
+  private initFirebase() {
+    // 1. Coba inisialisasi dari service account JSON file
+    const serviceAccountPath = this.configService.get<string>('FIREBASE_SERVICE_ACCOUNT_PATH');
+    if (serviceAccountPath) {
+      const resolvedPath = path.isAbsolute(serviceAccountPath)
+        ? serviceAccountPath
+        : path.resolve(process.cwd(), serviceAccountPath);
+
+      if (fs.existsSync(resolvedPath)) {
+        try {
+          const serviceAccount = JSON.parse(fs.readFileSync(resolvedPath, 'utf8'));
+          this.firebaseApp = admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+          });
+          this.logger.log(
+            `Firebase Admin SDK initialized successfully via file: ${path.basename(resolvedPath)} (Project: ${serviceAccount.project_id})`,
+          );
+          return;
+        } catch (err: any) {
+          this.logger.warn(`Firebase Admin SDK file init failed: ${err.message}`);
+        }
+      }
+    }
+
+    // 2. Fallback ke kredensial env terurai
     const projectId = this.configService.get<string>('FIREBASE_PROJECT_ID');
     const clientEmail = this.configService.get<string>('FIREBASE_CLIENT_EMAIL');
     const privateKey = this.configService.get<string>('FIREBASE_PRIVATE_KEY');
@@ -21,7 +51,9 @@ export class FcmProvider {
             privateKey: privateKey.replace(/\\n/g, '\n'),
           }),
         });
-        this.logger.log('Firebase Admin SDK initialized successfully.');
+        this.logger.log(
+          `Firebase Admin SDK initialized successfully via ENV (Project: ${projectId}).`,
+        );
       } catch (err: any) {
         this.logger.warn(`Firebase Admin SDK init skipped: ${err.message}`);
       }

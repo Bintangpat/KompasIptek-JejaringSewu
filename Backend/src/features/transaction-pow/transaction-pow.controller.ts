@@ -9,8 +9,11 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { TransactionPowService } from './transaction-pow.service';
 import { JwtAuthGuard } from '../../core/guards/jwt-auth.guard';
+import { RolesGuard } from '../../core/guards/roles.guard';
+import { Roles } from '../../core/decorators/roles.decorator';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
 import { SelfiePoWDto } from './dto/transaction.dto';
 
@@ -28,6 +31,25 @@ export class TransactionPowController {
     @Query('status') status?: string,
   ) {
     return this.transactionPowService.getMyTransactions(userId, type, status);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN_BUMDES, Role.ADMIN_BAPPERIDA, Role.SUPER_ADMIN)
+  @Get('audit-trail')
+  async getAuditTrail(@Query('limit') limit?: string) {
+    const limitNum = limit ? parseInt(limit, 10) : 50;
+    return this.transactionPowService.getAuditTrail(limitNum);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN_BUMDES, Role.ADMIN_BAPPERIDA, Role.SUPER_ADMIN)
+  @Get('pekon/:pekonId')
+  async getPekonTransactions(
+    @Param('pekonId') pekonId: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    return this.transactionPowService.getPekonTransactions(pekonId, limitNum);
   }
 
   @Get(':id/token')

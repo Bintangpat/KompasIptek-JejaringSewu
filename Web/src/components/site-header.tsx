@@ -57,6 +57,7 @@ export function SiteHeader() {
     ADMIN_BUMDES: { label: "BUMDes Pekon", icon: Building2, color: "text-emerald-500 border-emerald-500/30 bg-emerald-500/10" },
     ADMIN_BAPPERIDA: { label: "BAPPERIDA", icon: Compass, color: "text-cyan-500 border-cyan-500/30 bg-cyan-500/10" },
     WARGA: { label: "Warga Desa", icon: Users, color: "text-amber-500 border-amber-500/30 bg-amber-500/10" },
+    PENGEPUL: { label: "Pengepul Jujur", icon: Users, color: "text-blue-500 border-blue-500/30 bg-blue-500/10" },
     PENGUMPUL_JUJUR: { label: "Pengepul Jujur", icon: Users, color: "text-blue-500 border-blue-500/30 bg-blue-500/10" },
     UMKM: { label: "Pelaku UMKM", icon: Users, color: "text-purple-500 border-purple-500/30 bg-purple-500/10" },
     SUPER_ADMIN: { label: "Super Admin", icon: ShieldCheck, color: "text-rose-500 border-rose-500/30 bg-rose-500/10" },

@@ -84,11 +84,24 @@ async function main() {
   const mainPekon = createdPekons[0];
 
   // 2. Seed Users & Wallets
+  const passwordSuperAdmin = await argon2.hash('Bintang Admin123!');
   const passwordAdminBumdes = await argon2.hash('AdminBumdes123!');
   const passwordBapperida = await argon2.hash('AdminBapperida123!');
   const passwordWarga = await argon2.hash('WargaSlamet123!');
 
   const usersData = [
+    {
+      nik: '1802040407050002',
+      fullName: 'Bintang SuperAdmin',
+      phoneNumber: '087888316935',
+      email: 'bintang.superadmin@pringsewukab.go.id',
+      role: Role.SUPER_ADMIN,
+      passwordHash: passwordSuperAdmin,
+      isNikVerified: true,
+      referralCode: 'SUPER-BINTANG',
+      pekonId: mainPekon.id,
+      vulnerabilityFlags: [VulnerabilityStatus.NONE],
+    },
     {
       nik: '1801050101900001',
       fullName: 'Ahmad Fauzi (Admin BUMDes Pagelaran)',

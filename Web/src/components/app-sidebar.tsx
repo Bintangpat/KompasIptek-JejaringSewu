@@ -37,6 +37,7 @@ import {
   UserCheck,
   Sparkles,
   Layers,
+  Users,
 } from "lucide-react";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -66,6 +67,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     { title: "Studio Kamera Selfie PoW", url: "/citizen/pow", icon: Camera },
     { title: "Tukar Poin & Paket Gizi", url: "/citizen/poin", icon: Coins },
     { title: "Profil & Skor Kredit", url: "/citizen/profile", icon: UserCheck },
+  ];
+
+  const superAdminLinks = [
+    { title: "Manajemen Pengguna", url: "/super-admin/users", icon: Users },
   ];
 
   const normalize = (path: string) => path.replace(/\/+$/, "") || "/";
@@ -107,6 +112,49 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent className="px-2 py-3 space-y-4 bg-sidebar">
+        {/* Kelompok Super Admin */}
+        <SidebarGroup>
+          <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80 px-2 flex items-center justify-between">
+            <span>Super Admin</span>
+            {activeRole === "SUPER_ADMIN" && (
+              <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-rose-500/50 text-rose-600 dark:text-rose-400">
+                Aktif
+              </Badge>
+            )}
+          </SidebarGroupLabel>
+          <SidebarMenu className="mt-1 space-y-1">
+            {superAdminLinks.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.url);
+              return (
+                <SidebarMenuItem key={item.url}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={active}
+                    tooltip={item.title}
+                    className={cn(
+                      "transition-all duration-150 rounded-md font-medium text-xs",
+                      active
+                        ? "bg-primary text-primary-foreground font-semibold shadow-xs shadow-primary/30 hover:bg-primary hover:text-primary-foreground [&_svg]:text-primary-foreground"
+                        : "bg-sidebar text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground [&_svg]:text-sidebar-foreground/70"
+                    )}
+                  >
+                    <Link href={item.url} className="flex items-center gap-2.5 w-full">
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="truncate flex-1">{item.title}</span>
+                      {active && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary-foreground shrink-0 shadow-xs" />
+                      )}
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
+        </SidebarGroup>
+
+        <SidebarSeparator className="my-1 opacity-50" />
+
         {/* Kelompok BUMDes */}
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80 px-2 flex items-center justify-between">

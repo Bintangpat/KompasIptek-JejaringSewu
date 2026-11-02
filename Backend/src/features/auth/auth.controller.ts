@@ -49,6 +49,11 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
+    dto.deviceId =
+      dto.deviceId ||
+      (req.headers['x-device-id'] as string) ||
+      `device_${req.ip || 'unknown'}`;
+
     const { accessToken, refreshToken, user } =
       await this.authService.loginWithIdentifier(dto, req.ip);
     this.setRefreshTokenCookie(res, refreshToken);
@@ -63,6 +68,11 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
+    dto.deviceId =
+      dto.deviceId ||
+      (req.headers['x-device-id'] as string) ||
+      `device_${req.ip || 'unknown'}`;
+
     const { accessToken, refreshToken, user } =
       await this.authService.loginWithGoogle(dto, req.ip);
     this.setRefreshTokenCookie(res, refreshToken);

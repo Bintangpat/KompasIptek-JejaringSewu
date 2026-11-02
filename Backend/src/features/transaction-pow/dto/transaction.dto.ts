@@ -11,7 +11,7 @@ import { Type, Transform } from 'class-transformer';
 
 export class SelfiePoWDto {
   @IsString()
-  @IsNotEmpty({ message: 'URL gambar selfie PoW di Cloudflare R2 wajib ada' })
+  @IsNotEmpty({ message: 'URL gambar selfie PoW di Backblaze B2 wajib ada' })
   imageStorageUrl: string;
 
   @IsString()

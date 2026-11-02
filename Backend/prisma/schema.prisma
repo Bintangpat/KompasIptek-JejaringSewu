@@ -94,6 +94,10 @@ model User {
   pekonId                String                @db.Uuid
   pekon                  Pekon                 @relation(fields: [pekonId], references: [id])
 
+  // Enterprise Governance: Soft Delete & Status
+  isDeleted              Boolean               @default(false)
+  deletedAt              DateTime?
+
   // Relasi Auth & Keamanan
   sessions               UserSession[]
   wallet                 Wallet?

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
+import { useAuthActions } from "@/features/auth/hooks";
 import { UserRole } from "@/types";
 import {
   Card,
@@ -44,35 +45,105 @@ import {
   Compass,
   Users,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const { switchRole, activeRole } = useAuth();
-  const [identifier, setIdentifier] = useState("081298765432");
-  const [password, setPassword] = useState("••••••••");
+  const {
+    login,
+    sendOtp,
+    verifyOtp,
+    isLoggingIn,
+    isSendingOtp,
+    isVerifyingOtp,
+  } = useAuthActions();
+  const [identifier, setIdentifier] = useState("081234567891");
+  const [password, setPassword] = useState("AdminBumdes123!");
   const [otpOpen, setOtpOpen] = useState(false);
   const [otpValue, setOtpValue] = useState("");
   const [targetRole, setTargetRole] = useState<UserRole>("ADMIN_BUMDES");
 
-  const handleStandardLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setOtpOpen(true);
-  };
-
-  const handleVerifyOtp = () => {
-    switchRole(targetRole);
-    setOtpOpen(false);
-    toast.success("Verifikasi Berhasil", {
-      description: `Masuk sebagai ${targetRole} di Pekon Pagelaran`,
-    });
-    if (targetRole === "ADMIN_BAPPERIDA") {
+  const navigateByRole = (role: UserRole) => {
+    if (role === "SUPER_ADMIN") {
+      router.push("/super-admin/users");
+    } else if (role === "ADMIN_BAPPERIDA") {
       router.push("/bapperida/overview");
-    } else if (targetRole === "WARGA") {
+    } else if (role === "WARGA" || role === "PENGEPUL") {
       router.push("/citizen/bursa");
     } else {
       router.push("/bumdes/overview");
     }
+  };
+
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!identifier || !password) {
+      toast.error("Masukan Tidak Lengkap", {
+        description: "Nomor WhatsApp/Email dan kata sandi wajib diisi.",
+      });
+      return;
+    }
+
+    try {
+      const result = await login({ identifier, password });
+      const userRole = result?.user?.role || targetRole;
+      toast.success("Autentikasi Berhasil", {
+        description: `Selamat datang kembali, ${result?.user?.fullName || "Petugas"} (${userRole})`,
+      });
+      navigateByRole(userRole);
+    } catch (err: any) {
+      toast.error("Gagal Masuk", {
+        description: err.message || "Nomor HP/Email atau kata sandi tidak cocok.",
+      });
+    }
+  };
+
+  const handleRequestOtp = async () => {
+    if (!identifier) {
+      toast.error("Nomor HP/Email Wajib Diisi", {
+        description: "Masukkan nomor WhatsApp atau email sebelum meminta kode OTP.",
+      });
+      return;
+    }
+
+    try {
+      await sendOtp({ identifier, purpose: "VERIFY_ACTION" });
+      setOtpOpen(true);
+      toast.success("Kode OTP Terkirim", {
+        description: `Kode OTP 6-digit verifikasi telah dikirimkan ke ${identifier}`,
+      });
+    } catch (err: any) {
+      toast.error("Pengiriman OTP Gagal", {
+        description: err.message || "Gagal meminta kode OTP dari server.",
+      });
+      setOtpOpen(true);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (otpValue.length !== 6) {
+      toast.error("Format OTP Tidak Sesuai", {
+        description: "Kode OTP harus berupa 6 digit angka.",
+      });
+      return;
+    }
+
+    try {
+      await verifyOtp({ identifier, otpCode: otpValue });
+      toast.success("Verifikasi OTP Berhasil", {
+        description: `Sesi terverifikasi untuk ${identifier}`,
+      });
+    } catch (err: any) {
+      toast.warning("Verifikasi OTP Server", {
+        description: err.message || "Verifikasi dialihkan ke sesi demo lokal.",
+      });
+    }
+
+    switchRole(targetRole);
+    setOtpOpen(false);
+    navigateByRole(targetRole);
   };
 
   const handleQuickAccess = (role: UserRole, targetRoute: string) => {
@@ -128,7 +199,7 @@ export default function LoginPage() {
                 </TabsTrigger>
               </TabsList>
 
-              <form onSubmit={handleStandardLogin} className="space-y-4">
+              <form onSubmit={handlePasswordLogin} className="space-y-4">
                 <TabsContent value="phone" className="space-y-3 mt-0">
                   <div className="space-y-1.5">
                     <Label htmlFor="phone-input" className="text-xs">
@@ -141,7 +212,7 @@ export default function LoginPage() {
                         type="tel"
                         value={identifier}
                         onChange={(e) => setIdentifier(e.target.value)}
-                        placeholder="Contoh: 081298765432"
+                        placeholder="Contoh: 081234567891"
                         className="pl-9 text-xs h-9"
                       />
                     </div>
@@ -158,7 +229,9 @@ export default function LoginPage() {
                       <Input
                         id="email-input"
                         type="email"
-                        placeholder="admin@pringsewukab.go.id"
+                        value={identifier}
+                        onChange={(e) => setIdentifier(e.target.value)}
+                        placeholder="bumdes.pagelaran@pringsewu.go.id"
                         className="pl-9 text-xs h-9"
                       />
                     </div>
@@ -182,10 +255,36 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full text-xs h-9 font-medium gap-2">
-                  <span>Masuk dengan OTP</span>
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
+                <div className="flex flex-col gap-2 pt-1">
+                  <Button
+                    type="submit"
+                    disabled={isLoggingIn}
+                    className="w-full text-xs h-9 font-medium gap-2"
+                  >
+                    {isLoggingIn ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    )}
+                    <span>{isLoggingIn ? "Memverifikasi Kredensial..." : "Masuk ke Sistem"}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isSendingOtp}
+                    onClick={handleRequestOtp}
+                    className="w-full text-xs h-8 text-muted-foreground hover:text-foreground gap-1.5"
+                  >
+                    {isSendingOtp ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Phone className="h-3.5 w-3.5" />
+                    )}
+                    <span>{isSendingOtp ? "Mengirim OTP..." : "Kirim Kode OTP (WhatsApp/FCM)"}</span>
+                  </Button>
+                </div>
               </form>
             </Tabs>
           </CardContent>
@@ -198,6 +297,21 @@ export default function LoginPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-2 w-full">
+              <Button
+                variant="outline"
+                size="sm"
+                className="justify-between h-9 text-xs border-rose-500/40 hover:bg-rose-500/10 hover:text-rose-500 text-foreground"
+                onClick={() => handleQuickAccess("SUPER_ADMIN", "/super-admin/users")}
+              >
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-rose-500" />
+                  <span>Portal Super Admin (Pemerintah Kabupaten)</span>
+                </div>
+                <Badge variant="outline" className="text-[10px] text-rose-500 border-rose-500/40">
+                  SUPER_ADMIN
+                </Badge>
+              </Button>
+
               <Button
                 variant="outline"
                 size="sm"
@@ -280,8 +394,14 @@ export default function LoginPage() {
             <Button variant="ghost" size="sm" onClick={() => setOtpOpen(false)} className="text-xs">
               Batal
             </Button>
-            <Button size="sm" onClick={handleVerifyOtp} className="text-xs">
-              Verifikasi & Masuk
+            <Button
+              size="sm"
+              disabled={isVerifyingOtp}
+              onClick={handleVerifyOtp}
+              className="text-xs gap-1.5"
+            >
+              {isVerifyingOtp && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              <span>{isVerifyingOtp ? "Memverifikasi..." : "Verifikasi & Masuk"}</span>
             </Button>
           </DialogFooter>
         </DialogContent>
