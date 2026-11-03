@@ -1,3 +1,37 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@import 'uniwind';
+@import './theme.css';
+
+@source './app';
+@source './components';
+@source './features';
+@source './lib';
+@source './hooks';
+
+@utility font-geist-regular {
+  font-family: 'Geist-Regular';
+}
+@utility font-geist-medium {
+  font-family: 'Geist-Medium';
+}
+@utility font-geist-semibold {
+  font-family: 'Geist-SemiBold';
+}
+@utility font-geist-bold {
+  font-family: 'Geist-Bold';
+}
+@utility font-geist-extrabold {
+  font-family: 'Geist-ExtraBold';
+}
+@utility font-geist-black {
+  font-family: 'Geist-Black';
+}
+@utility font-geist-mono {
+  font-family: 'GeistMono-Regular';
+}
+@utility font-geist-mono-medium {
+  font-family: 'GeistMono-Medium';
+}
+@utility font-geist-mono-bold {
+  font-family: 'GeistMono-Bold';
+}

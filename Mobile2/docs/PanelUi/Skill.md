@@ -1,0 +1,155 @@
+---
+title: Skills
+description: Give a coding agent working knowledge of PanelUI — the components, the tokens, the CLI — plus an MCP server that lets it read the registry directly.
+---
+
+An agent writing React Native in your project has no idea PanelUI is there. It writes a styled
+`View` where there is a `Card`, invents a prop `Button` does not have, and hardcodes `#171717`
+into a screen that has six themes. Not because it is careless — because nothing told it.
+
+The **skill** tells it. It is a folder of markdown the agent loads when it recognises a PanelUI
+project: what exists, how the parts compose, which rules are not negotiable, and where to look up
+the real API rather than guess it.
+
+## Install
+
+<InstallTabs kind="dlx" packages="skills add panel-ui/PanelUI" />
+
+That writes the skills into your project for whichever agent you use — Claude Code, Cursor,
+Copilot, Windsurf and the rest all read the same format. Run it again to update.
+
+### Or, in Claude Code, as a plugin
+
+Two commands, and it brings the MCP server below with it:
+
+```
+/plugin marketplace add panel-ui/PanelUI
+/plugin install panelui
+```
+
+The plugin is versioned with the library, so the props it carries name the release they were read
+from. `/plugin update panelui` moves it on.
+
+Two skills come with either route. The one below is about the library; the other is
+[Logo Maker](/docs/integrations/logo-maker), which designs an app logo and has
+nothing to do with PanelUI beyond being written here.
+
+Nothing else is needed: the skill activates on its own when the project has `panelui-native` in
+its dependencies or a `panelui.json` beside it.
+
+## What is in it
+
+<Cards>
+  <Card title="Project context">
+    Which of the two ways in this project uses — the package, copied source, or both — because
+    that decides whether the agent should import from `panelui-native` or from
+    `@/components/ui/…`. It checks rather than assumes.
+  </Card>
+  <Card title="Every component, with its props">
+    An index of all of them by what they are for, and a file each holding the anatomy, every prop
+    with its type and default, the variants, the compound parts and a worked example. Generated
+    from the library's own TypeScript, so it cannot name a component that does not exist or a prop
+    that never shipped — and the agent reads it from disk rather than fetching it.
+  </Card>
+  <Card title="Setup, and why nothing is styled">
+    The six install steps, and every reason `className` does nothing — a `metro.config.js` in the
+    wrong folder, a `cssEntryFile` pointing at a file that was never edited, two CSS entries, a
+    `@source` path relative to the wrong thing. None of it raises an error, which is why it is
+    written down.
+  </Card>
+  <Card title="Whole screens">
+    A settings screen, a form with validation, a chat transcript, filters in a sheet, a list with
+    swipe actions, a chart in a card, a search that clears the keyboard. The compositions, so an
+    agent reaches for the parts instead of a styled `View`.
+  </Card>
+  <Card title="The hooks and primitives">
+    Every hook, utility and primitive the library exports, with its signature and when to reach
+    for it — including `useCSSVariable`, which is how a colour becomes a value rather than a class.
+  </Card>
+  <Card title="The rules that are not negotiable">
+    Semantic tokens and never a literal colour. `gap-*`, because React Native has no `space-*`.
+    One provider at the root, or overlays mount and never appear. Reanimated, never core
+    `Animated`. Each with a wrong/right pair.
+  </Card>
+  <Card title="Theming">
+    The six themes, the radius scale a family brings with it, `extraThemes` and the restart it
+    needs, and how to read a token in JavaScript instead of restating it.
+  </Card>
+  <Card title="The CLI">
+    `init`, `add`, `list`, `panelui.json`, the registry format — and why `--overwrite` is not
+    something to pass without asking.
+  </Card>
+  <Card title="Native controls">
+    That `native` alone is not Liquid Glass, that a native control ignores every token, and that
+    hosting elements inside a labelled native button crashes in native code.
+  </Card>
+</Cards>
+
+## MCP server
+
+The skill is what the agent knows. The **MCP server** is how it looks things up — it reads the
+same registry the CLI installs from, so the source it quotes is the source you would get.
+
+<InstallTabs kind="dlx" packages="panelui-cli@latest mcp init" />
+
+That writes the server into `.mcp.json`. Pass `cursor` or `vscode` for those instead; it merges
+into whatever is already in the file rather than replacing it.
+
+By hand, it is:
+
+```json title=".mcp.json"
+{
+  "mcpServers": {
+    "panelui": {
+      "command": "npx",
+      "args": ["-y", "panelui-cli@latest", "mcp"]
+    }
+  }
+}
+```
+
+| Editor      | Config file        |
+| ----------- | ------------------ |
+| Claude Code | `.mcp.json`        |
+| Cursor      | `.cursor/mcp.json` |
+| VS Code     | `.vscode/mcp.json` |
+
+### Tools
+
+| Tool                         | What it answers                                                     |
+| ---------------------------- | ------------------------------------------------------------------- |
+| `panelui_get_project_info`   | How this project is set up, and which components are already in it  |
+| `panelui_search_components`  | "Is there already something for this?"                              |
+| `panelui_list_components`    | Everything in the registry                                          |
+| `panelui_view_component`     | One item in full, including every file's source                     |
+| `panelui_get_component_docs` | A component's page as markdown — anatomy, props, variants, examples |
+| `panelui_get_add_command`    | The command that copies components in                               |
+
+<Callout>
+  The server has no dependencies of its own — it is part of `panelui-cli`, which is a few
+  kilobytes. `npx` fetches it on demand, so there is nothing to install.
+</Callout>
+
+## Without either of them
+
+Everything both of them read is a public URL, so an agent that can fetch can use the same
+sources:
+
+| URL                                      | What it returns                    |
+| ---------------------------------------- | ---------------------------------- |
+| `panelui.dev/llms.txt`                   | Every page on this site, as a list |
+| `panelui.dev/llms.mdx/components/button` | That page as markdown              |
+| `panelui.dev/r/index.json`               | The registry index                 |
+| `panelui.dev/r/button.json`              | One item, with its full source     |
+
+## Asking for things
+
+With the skill loaded, these do what you would hope:
+
+- _"Add a settings screen with sections for profile, notifications and appearance."_
+- _"Put the filters in a bottom sheet."_
+- _"Make this chart use the brand green."_
+- _"Why is nothing styled?"_
+
+The last one is the reason half of this exists. The answer is almost always the CSS entry path in
+`metro.config.js`, and `setup.md` walks the list in the order the causes actually occur.

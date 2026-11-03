@@ -1,0 +1,217 @@
+---
+title: Icons
+description: Every icon in the library, what to import, and how they take their colour and size.
+---
+
+PanelUI ships a small icon set — enough to draw its own components, and enough
+for most of an app. Every one is a React component exported from the package,
+so there is nothing to install alongside it and no sprite sheet to load.
+
+The glyphs come from Hugeicons, which the package depends on; the wrappers are
+what make them behave like part of the library — a per-icon default size, the
+inherited colour below, and the right-to-left mirroring further down. Four are
+drawn by hand instead: the Google, Facebook and Apple marks carry their own
+palettes, and `BadgeCheckIcon` is two-tone.
+
+```tsx
+import { SearchIcon, ClockIcon } from 'panelui-native';
+
+<SearchIcon />
+<ClockIcon size={20} />
+```
+
+## The set
+
+Search by name or by what it is — "arrow", "chevron", "shield". Click any icon
+to copy its tag.
+
+<IconGallery />
+
+<Callout>
+  The names shown are without the `Icon` suffix that every export carries. The
+  bell is `BellIcon`, not `Bell`.
+</Callout>
+
+## Size
+
+`size` sets both dimensions — they are always square.
+
+```tsx
+<BellIcon size={24} />
+```
+
+Each icon has a default suited to where it is normally drawn, so most call
+sites can leave it off. Most default to **16**. `CheckIcon` and `MinusIcon`
+default to 14, being the glyphs inside a checkbox. Eleven that are usually
+drawn larger — the brand marks, the sun and moon toggles, the status icons,
+`MenuIcon`, `ArrowUpRightIcon` and `StarIcon` — default to 18 or 20.
+
+## Weight
+
+`strokeWidth` sets the line weight, and defaults to **2**.
+
+```tsx
+<BellIcon strokeWidth={1.5} />
+```
+
+The set is drawn at 24 and used at 14 to 20, and a hairline that reads
+correctly at full size thins to nothing at two thirds of it — so the default is
+heavier than the drawings' own.
+
+Six carry their own weight, because each sits beside something it has to match
+rather than because it looks better alone. `CheckIcon` and `MinusIcon` are 3,
+being the two glyphs a checkbox shows in the same square. `GripVerticalIcon`
+and `SendArrowIcon` are 2.5, `StarIcon` is 1.6 and `PauseIcon` is 1.5. Pass
+`strokeWidth` to override any of them.
+
+## Colour
+
+An icon takes its colour in this order:
+
+1. An explicit `color` prop.
+2. The colour provided by an enclosing surface.
+3. Its own fallback.
+
+The fallback is a mid grey for most of the set, and differs for the few that
+are normally drawn somewhere specific — `CheckIcon` falls back to white,
+because it sits on a filled checkbox.
+
+The middle step is the one that matters, and it is why an icon dropped into a
+Button looks right without being told anything:
+
+```tsx
+// The icon comes out in the primary foreground, not grey —
+// Button provides the colour that reads against its own fill.
+<Button startContent={<SendIcon size={16} />}>Send</Button>
+```
+
+Any component painting its own background does this. To do it yourself, wrap a
+subtree in the provider:
+
+```tsx
+import { IconColorProvider } from 'panelui-native'
+import { useCSSVariable } from 'uniwind'
+
+const tint = useCSSVariable('--color-destructive')
+
+;<IconColorProvider color={tint}>
+  <TrashIcon />
+  <XIcon />
+</IconColorProvider>
+```
+
+Pass a token rather than a hex, so the icon follows the theme — see
+[Colors](/docs/customization/colors) for `useCSSVariable`.
+
+<Callout type="warn" title="Brand marks keep their own colours">
+  `GoogleIcon` and `FacebookIcon` carry their palettes and ignore both the
+  `color` prop and the surrounding context, because a recoloured brand mark is
+  the wrong mark. `AppleIcon` is the exception among the three: it is
+  monochrome by design and Apple's guidelines require it to match the button's
+  text, so it does follow the colour context.
+</Callout>
+
+## Filled and outlined
+
+A few icons have an on state, taking `filled` — a like that has been given, a
+bookmark that has been saved, a vote that has been cast.
+
+```tsx
+<HeartIcon filled={liked} />
+<BookmarkIcon filled={saved} />
+```
+
+`HeartIcon`, `BookmarkIcon`, `StarIcon`, `ArrowUpIcon`, `ArrowDownIcon`,
+`MessageCircleIcon` and `CircleIcon` take it. The outline stays put and only the
+inside changes, so the row does not shift when the state does.
+
+`CircleIcon` is the odd one in that list: it is there because a filled disc is
+what a selected radio row shows, and drawing that as a rounded `View` instead
+makes it optically a different size from the tick beside it at the same nominal
+one.
+
+`BadgeCheckIcon` is filled either way and takes a `checkColor` for the tick
+inside it, which defaults to white.
+
+## Direction
+
+Four icons mirror themselves inside a `Direction dir="rtl"` subtree:
+`ChevronLeftIcon`, `ChevronRightIcon`, `ArrowUpRightIcon` and `SendIcon`. Yoga
+moves a chevron to the other end of its row, but it cannot turn the glyph
+around — so without this an RTL list row ends up with a right-pointing chevron
+on its left edge, pointing back at the text.
+
+Only glyphs whose meaning _is_ a direction do this. A pencil or a magnifier
+means the same thing either way round, and flipping it would just be a wrong
+drawing. The vertical axis does not mirror either, so `ChevronUpIcon` and
+`ChevronDownIcon` stay as they are drawn.
+
+## Using another icon set
+
+Nothing in PanelUI requires its own icons. Every prop that takes an icon takes
+any React element, so a component from `@expo/vector-icons`, or one you drew
+yourself, drops straight in:
+
+```tsx
+import { Feather } from '@expo/vector-icons'
+
+;<Button startContent={<Feather name='send' size={16} />}>Launch</Button>
+```
+
+The whole of Hugeicons is available too, since the package already depends on
+it — the set here is the part the library needed, not a limit:
+
+```tsx
+import { HugeiconsIcon } from '@hugeicons/react-native'
+import RocketIcon from '@hugeicons/core-free-icons/Rocket01Icon'
+
+;<Button startContent={<HugeiconsIcon icon={RocketIcon} size={16} />}>
+  Launch
+</Button>
+```
+
+The one thing you give up is the colour context: a third-party icon does not
+know about `IconColorProvider`, so on a coloured surface it needs the colour
+passing explicitly.
+
+```tsx
+<Button startContent={<Feather name='send' size={16} color='white' />}>
+  Launch
+</Button>
+```
+
+## Adding a glyph to the built-in set
+
+To add one icon that behaves like the built-in ones, build it with `icon()`. It
+is the factory the whole set is made with, so the new glyph follows the same
+colour order (the prop, then `IconColorProvider`, then its default), draws at the
+same weight, and takes `filled` and the right-to-left mirror the same way.
+
+```tsx
+import HgViewOffIcon from '@hugeicons/core-free-icons/ViewOffIcon'
+import { icon } from 'panelui-native/icons'
+
+export const EyeOffIcon = icon(HgViewOffIcon, { size: 16, color: '#737373' })
+```
+
+The second argument is `IconDefaults`, which is exported too:
+
+| Key           | What it sets                                                                                        |
+| ------------- | --------------------------------------------------------------------------------------------------- |
+| `size`        | The width and height when the caller passes no `size`.                                              |
+| `color`       | The colour when neither a prop nor a provider supplies one.                                         |
+| `strokeWidth` | The line weight, if it should differ from the set's `2`.                                            |
+| `flip`        | `true` for a glyph whose meaning is a horizontal direction, so it mirrors in right-to-left layouts. |
+| `fillable`    | `true` for a toggle glyph that can be drawn solid with `filled`.                                    |
+
+In a project that copied the components in with the CLI, import `icon` from
+`@/components/ui/icons` instead.
+
+## Next
+
+<Cards>
+  <Card title="Colors" href="/docs/customization/colors" />
+  <Card title="Theming" href="/docs/customization/theming" />
+  <Card title="Fonts" href="/docs/customization/fonts" />
+  <Card title="Styling" href="/docs/customization/styling" />
+</Cards>

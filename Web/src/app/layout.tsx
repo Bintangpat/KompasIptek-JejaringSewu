@@ -4,10 +4,9 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
-import { Inter } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import { cn } from "@/lib/utils";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "JEJARING-SEWU — Dashboard Otoritas BUMDes & BAPPERIDA",
@@ -24,7 +23,7 @@ export default function RootLayout({
     <html
       lang="id"
       suppressHydrationWarning
-      className={cn("font-sans", inter.variable)}
+      className={cn("font-sans", GeistSans.variable, GeistMono.variable)}
     >
       <body className="antialiased min-h-screen bg-background text-foreground font-sans">
         <ThemeProvider

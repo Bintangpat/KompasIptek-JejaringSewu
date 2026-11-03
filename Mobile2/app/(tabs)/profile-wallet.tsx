@@ -1,14 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   TouchableOpacity,
   RefreshControl,
   Alert,
 } from 'react-native';
-import { WifiOff, Type } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { WifiOff, Type, LogIn, UserCheck } from 'lucide-react-native';
 import NetInfo from '@react-native-community/netinfo';
+
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Text } from '@/components/ui/text';
+import { AuthWallSheet } from '@/components/ui/auth-wall-sheet';
+import { useAuthProtection } from '@/hooks/use-auth-protection';
 
 import { useAuth } from '@/context/AuthContext';
 import { apiClient } from '@/services/api';
@@ -59,7 +66,15 @@ const FALLBACK_NUTRITION_PACKAGES = [
 ];
 
 export default function ProfileWalletScreen() {
+  const router = useRouter();
   const { user, loginAsDemoWarga, logout } = useAuth();
+  const {
+    isAuthWallOpen,
+    setIsAuthWallOpen,
+    authWallProps,
+    protectedAction,
+  } = useAuthProtection();
+
   const [wallet, setWallet] = useState<any>(null);
   const [ledgerEntries, setLedgerEntries] = useState<any[]>([]);
   const [creditScore, setCreditScore] = useState<any>(null);
@@ -181,105 +196,114 @@ export default function ProfileWalletScreen() {
 
   // 3. Handle Klaim Modal BUMDes
   const handleClaimBumdesLoan = async () => {
-    Alert.alert(
-      'Plafon Modal Usaha BUMDes',
-      'Selamat! Skor kredit alternatif Anda mencapai Grade A (≥85). Anda berhak mengajukan modal kerja BUMDes Rp 1.500.000 dengan margin mikro 0% dan tanpa agunan fisik.',
-      [
-        { text: 'Tutup', style: 'cancel' },
-        {
-          text: 'Ajukan ke BUMDes',
-          onPress: () => {
-            Alert.alert(
-              'Pengajuan Terkirim',
-              'Permohonan modal telah dikirimkan ke Admin BUMDes Pekon. Silakan verifikasi fisik singkat di balai pekon.'
-            );
+    protectedAction(() => {
+      Alert.alert(
+        'Plafon Modal Usaha BUMDes',
+        'Selamat! Skor kredit alternatif Anda mencapai Grade A (≥85). Anda berhak mengajukan modal kerja BUMDes Rp 1.500.000 dengan margin mikro 0% dan tanpa agunan fisik.',
+        [
+          { text: 'Tutup', style: 'cancel' },
+          {
+            text: 'Ajukan ke BUMDes',
+            onPress: () => {
+              Alert.alert(
+                'Pengajuan Terkirim',
+                'Permohonan modal telah dikirimkan ke Admin BUMDes Pekon. Silakan verifikasi fisik singkat di balai pekon.'
+              );
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }, {
+      title: 'Klaim Modal Usaha BUMDes',
+      description: 'Masuk dengan akun warga agar riwayat skor kredit AHP-TOPSIS dan rekomendasi plafon Anda dapat diproses oleh pengurus BUMDes.',
+    });
   };
 
   // 4. Handle Tukar Poin Pangan Stunting
   const handleRedeemPackage = async (pkg: any) => {
-    const currentPoints = wallet?.pointsBalance ? Number(wallet.pointsBalance) : 50;
+    protectedAction(() => {
+      const currentPoints = wallet?.pointsBalance ? Number(wallet.pointsBalance) : 50;
 
-    if (currentPoints < pkg.pointCost) {
+      if (currentPoints < pkg.pointCost) {
+        Alert.alert(
+          'Poin Belum Cukup',
+          `Poin Anda (${currentPoints} PTS) belum mencukupi untuk menebus paket ini (${pkg.pointCost} PTS). Tingkatkan aktivitas kerja fisik (PoW) atau selesaikan mini-job.`
+        );
+        return;
+      }
+
       Alert.alert(
-        'Poin Belum Cukup',
-        `Poin Anda (${currentPoints} PTS) belum mencukupi untuk menebus paket ini (${pkg.pointCost} PTS). Tingkatkan aktivitas kerja fisik (PoW) atau selesaikan mini-job.`
-      );
-      return;
-    }
-
-    Alert.alert(
-      'Konfirmasi Penebusan Gizi',
-      `Tukarkan ${pkg.pointCost} Poin Reputasi untuk "${pkg.packageName}"?\n\nLokasi pengambilan: ${pkg.pickupLocation || 'BUMDes Pekon'}.`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Tukarkan Poin',
-          onPress: async () => {
-            setRedeemingPackageId(pkg.id);
-            try {
-              if (!isOnline) {
-                const taskId = `offline-redeem-${Date.now()}`;
-                await queueOfflineTask(
-                  taskId,
-                  `idemp-${taskId}`,
-                  '/nutrition/redeem',
-                  'POST',
-                  { packageId: pkg.id }
-                );
-                await loadOfflineTasks();
-                Alert.alert(
-                  'Disimpan Offline',
-                  'Penebusan paket gizi disimpan ke antrean lokal karena sinyal blank-spot. Saldo akan otomatis disinkronkan saat terhubung kembali.'
-                );
-              } else {
-                await nutritionApi.redeemPackage({ packageId: pkg.id });
-                Alert.alert(
-                  'Penebusan Berhasil!',
-                  `Kupon digital Anda telah aktif. Tunjukkan bukti kupon ke petugas di ${pkg.pickupLocation || 'BUMDes'}.`
-                );
-                fetchWalletAndScore();
+        'Konfirmasi Penebusan Gizi',
+        `Tukarkan ${pkg.pointCost} Poin Reputasi untuk "${pkg.packageName}"?\n\nLokasi pengambilan: ${pkg.pickupLocation || 'BUMDes Pekon'}.`,
+        [
+          { text: 'Batal', style: 'cancel' },
+          {
+            text: 'Tukarkan Poin',
+            onPress: async () => {
+              setRedeemingPackageId(pkg.id);
+              try {
+                if (!isOnline) {
+                  const taskId = `offline-redeem-${Date.now()}`;
+                  await queueOfflineTask(
+                    taskId,
+                    `idemp-${taskId}`,
+                    '/nutrition/redeem',
+                    'POST',
+                    { packageId: pkg.id }
+                  );
+                  await loadOfflineTasks();
+                  Alert.alert(
+                    'Disimpan Offline',
+                    'Penebusan paket gizi disimpan ke antrean lokal karena sinyal blank-spot. Saldo akan otomatis disinkronkan saat terhubung kembali.'
+                  );
+                } else {
+                  await nutritionApi.redeemPackage({ packageId: pkg.id });
+                  Alert.alert(
+                    'Penebusan Berhasil!',
+                    `Kupon digital Anda telah aktif. Tunjukkan bukti kupon ke petugas di ${pkg.pickupLocation || 'BUMDes'}.`
+                  );
+                  fetchWalletAndScore();
+                }
+                setIsNutritionModalOpen(false);
+              } catch (err: any) {
+                Alert.alert('Gagal Menebus', err.message || 'Terjadi kesalahan sistem.');
+              } finally {
+                setRedeemingPackageId(null);
               }
-              setIsNutritionModalOpen(false);
-            } catch (err: any) {
-              Alert.alert('Gagal Menebus', err.message || 'Terjadi kesalahan sistem.');
-            } finally {
-              setRedeemingPackageId(null);
-            }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }, {
+      title: 'Tukarkan Poin Pangan Gizi',
+      description: 'Masuk dengan akun warga untuk menukarkan poin reputasi Proof-of-Work Anda dengan paket pangan bergizi pekon.',
+    });
   };
 
   return (
-    <View className="flex-1 bg-pekon-bg">
+    <View className="flex-1 bg-background">
       {/* Offline Status Banner */}
       {!isOnline && (
         <View
           accessible={true}
           accessibilityRole="alert"
           accessibilityLabel={`Peringatan: Jaringan internet terputus. Mode blank spot aktif dengan ${pendingTasks.length} antrean tersimpan.`}
-          className="bg-amber-500/20 border-b border-amber-500/40 px-4 py-2 flex-row items-center justify-between"
+          className="bg-amber-500/10 border-b border-amber-500/30 px-4 py-2 flex-row items-center justify-between"
         >
           <View className="flex-row items-center flex-1 mr-2">
-            <WifiOff size={15} color="#FBBF24" />
-            <Text className="text-amber-300 font-bold text-xs ml-2">
+            <WifiOff size={15} color="#F59E0B" />
+            <Text className="text-amber-500 font-bold text-xs ml-2">
               Mode Blank-Spot (Offline) • {pendingTasks.length} Antrean
             </Text>
           </View>
-          <TouchableOpacity
+          <Button
+            variant="outline"
+            size="xs"
             onPress={syncPendingTasks}
             disabled={syncingOffline}
-            className="bg-amber-500/30 px-2 py-0.5 rounded"
           >
-            <Text className="text-amber-200 text-[10px] font-bold">
-              {syncingOffline ? 'Sinkron...' : 'Cek Sinyal'}
-            </Text>
-          </TouchableOpacity>
+            {syncingOffline ? 'Sinkron...' : 'Cek Sinyal'}
+          </Button>
         </View>
       )}
 
@@ -292,63 +316,54 @@ export default function ProfileWalletScreen() {
               setRefreshing(true);
               fetchWalletAndScore();
             }}
-            tintColor="#00F2A9"
+            tintColor="#10B981"
           />
         }
       >
         {/* User Status Bar & Accessibility Controls */}
-        <View className="bg-pekon-surface border border-pekon-border p-3.5 rounded-xl flex-row items-center justify-between mb-4">
-          <View className="flex-1">
-            <Text className={`text-white font-bold ${isLargeFont ? 'text-base' : 'text-sm'}`}>
+        <Card className="bg-card border-border p-3.5 flex-row items-center justify-between mb-4">
+          <View className="flex-1 mr-2">
+            <Text className={`text-foreground font-bold ${isLargeFont ? 'text-base' : 'text-sm'}`}>
               {user ? user.fullName : 'Pengguna Tamu'}
             </Text>
-            <Text className={`text-pekon-muted ${isLargeFont ? 'text-xs' : 'text-[11px]'}`}>
+            <Text className={`text-muted-foreground ${isLargeFont ? 'text-xs' : 'text-[11px]'}`}>
               {user?.phoneNumber || 'Belum masuk akun warga'} • Pekon Pagelaran
             </Text>
           </View>
 
-          <View className="flex-row items-center space-x-2">
+          <View className="flex-row items-center gap-2">
             {/* Toggle Ukuran Huruf Lansia */}
             <TouchableOpacity
               accessible={true}
               accessibilityRole="button"
               accessibilityLabel={`Ubah ukuran huruf ${isLargeFont ? 'ke ukuran normal' : 'ke ukuran besar ramah lansia'}`}
-              className={`p-1.5 rounded-lg border ${isLargeFont ? 'bg-pekon-primary border-pekon-primary' : 'bg-pekon-card border-pekon-border'}`}
+              className={`p-2 rounded-lg border ${isLargeFont ? 'bg-primary border-primary' : 'bg-muted/40 border-border'}`}
               onPress={() => setIsLargeFont(!isLargeFont)}
             >
-              <Type size={16} color={isLargeFont ? '#0F1416' : '#00F2A9'} />
+              <Type size={16} color={isLargeFont ? '#FFFFFF' : '#10B981'} />
             </TouchableOpacity>
 
             {!user ? (
-              <TouchableOpacity
-                accessible={true}
-                accessibilityRole="button"
-                accessibilityLabel="Masuk sebagai akun demo warga"
-                className="bg-pekon-primary px-3 py-1.5 rounded-lg"
-                onPress={async () => {
-                  try {
-                    await loginAsDemoWarga();
-                    Alert.alert('Berhasil Masuk', 'Masuk sebagai Pak Slamet (Petani Singkong).');
-                  } catch (e: any) {
-                    Alert.alert('Gagal Masuk', e.message);
-                  }
-                }}
+              <Button
+                variant="primary"
+                size="sm"
+                onPress={() => router.push('/(auth)/login' as any)}
+                className="flex-row items-center"
               >
-                <Text className="text-pekon-bg font-bold text-xs">Demo Login</Text>
-              </TouchableOpacity>
+                <LogIn size={13} color="#FFFFFF" />
+                <Text className="text-primary-foreground font-bold text-xs ml-1">Masuk</Text>
+              </Button>
             ) : (
-              <TouchableOpacity
-                accessible={true}
-                accessibilityRole="button"
-                accessibilityLabel="Keluar dari akun warga"
-                className="bg-pekon-card border border-pekon-border px-2.5 py-1.5 rounded-lg"
+              <Button
+                variant="outline"
+                size="xs"
                 onPress={logout}
               >
-                <Text className="text-pekon-subtle text-xs">Keluar</Text>
-              </TouchableOpacity>
+                Keluar
+              </Button>
             )}
           </View>
-        </View>
+        </Card>
 
         {/* Double-Entry Wallet Card */}
         <WalletBalanceCard wallet={wallet} isLargeFont={isLargeFont} />
@@ -363,8 +378,13 @@ export default function ProfileWalletScreen() {
         {/* Intervensi Pangan Stunting Banner */}
         <NutritionInterventionBanner
           onOpenCatalog={() => {
-            fetchNutritionPackages();
-            setIsNutritionModalOpen(true);
+            protectedAction(() => {
+              fetchNutritionPackages();
+              setIsNutritionModalOpen(true);
+            }, {
+              title: 'Katalog Pangan Bergizi Pekon',
+              description: 'Masuk dengan akun warga untuk melihat katalog dan menebus paket gizi stunting.',
+            });
           }}
           isLargeFont={isLargeFont}
         />
@@ -386,6 +406,12 @@ export default function ProfileWalletScreen() {
         redeemingPackageId={redeemingPackageId}
         onClose={() => setIsNutritionModalOpen(false)}
         onRedeem={handleRedeemPackage}
+      />
+
+      <AuthWallSheet
+        open={isAuthWallOpen}
+        onOpenChange={setIsAuthWallOpen}
+        {...authWallProps}
       />
     </View>
   );

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { CameraView } from 'expo-camera';
 import {
   ChevronDown,
@@ -7,6 +7,11 @@ import {
   AlertTriangle,
   SwitchCamera,
 } from 'lucide-react-native';
+
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
 
 interface CameraViewfinderProps {
   cameraRef: any;
@@ -44,82 +49,82 @@ export const CameraViewfinder: React.FC<CameraViewfinderProps> = ({
         <View className="absolute top-4 left-4 right-4 gap-2">
           {/* Kartu Pemilih Transaksi */}
           <TouchableOpacity
-            className="bg-pekon-bg/90 border border-pekon-border p-3 rounded-xl flex-row items-center justify-between"
             onPress={onOpenTxSelector}
             accessible={true}
             accessibilityLabel="Pilih transaksi aktif untuk dibuktikan"
           >
-            <View className="flex-1 mr-2">
-              <Text className="text-[10px] font-bold text-pekon-primary uppercase tracking-wider">
-                Target Verifikasi Transaksi:
-              </Text>
-              <Text className="text-white text-xs font-bold mt-0.5" numberOfLines={1}>
-                {selectedTx
-                  ? `${getTxTypeLabel(selectedTx.type)} • Rp ${Number(selectedTx.grossAmount).toLocaleString('id-ID')}`
-                  : activeTransactionsCount > 0
-                  ? 'Pilih Transaksi Aktif...'
-                  : 'Belum Ada Transaksi Aktif (Mode Uji Coba)'}
-              </Text>
-            </View>
-            <ChevronDown size={16} color="#00F2A9" />
+            <Card className="bg-popover/90 border-border p-3 flex-row items-center justify-between">
+              <View className="flex-1 mr-2">
+                <Text className="text-[10px] font-bold text-primary uppercase tracking-wider">
+                  Target Verifikasi Transaksi:
+                </Text>
+                <Text className="text-foreground text-xs font-bold mt-0.5" numberOfLines={1}>
+                  {selectedTx
+                    ? `${getTxTypeLabel(selectedTx.type)} • Rp ${Number(selectedTx.grossAmount).toLocaleString('id-ID')}`
+                    : activeTransactionsCount > 0
+                    ? 'Pilih Transaksi Aktif...'
+                    : 'Belum Ada Transaksi Aktif (Mode Uji Coba)'}
+                </Text>
+              </View>
+              <ChevronDown size={16} color="#10B981" />
+            </Card>
           </TouchableOpacity>
 
           {/* Status Geotagging & Toleransi GPS */}
-          <View className="bg-pekon-bg/90 border border-pekon-border px-3 py-2 rounded-xl flex-row items-center justify-between">
+          <Card className="bg-popover/90 border-border px-3 py-2 flex-row items-center justify-between">
             <View className="flex-row items-center flex-1 mr-2">
-              <MapPin size={13} color={isGpsAccurate ? '#00F2A9' : '#F59E0B'} />
-              <Text className="text-white text-[11px] font-semibold ml-1.5" numberOfLines={1}>
+              <MapPin size={13} color={isGpsAccurate ? '#10B981' : '#F59E0B'} />
+              <Text className="text-foreground text-[11px] font-semibold ml-1.5" numberOfLines={1}>
                 GPS: {location?.coords.latitude.toFixed(4) || '-5.3421'}, {location?.coords.longitude.toFixed(4) || '104.9452'} (±{accuracyMeters.toFixed(0)}m)
               </Text>
             </View>
             {isGpsAccurate ? (
-              <View className="bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/40">
-                <Text className="text-emerald-400 text-[9px] font-bold">AKURAT</Text>
-              </View>
+              <Badge variant="success" size="xs">
+                AKURAT
+              </Badge>
             ) : (
-              <View className="bg-amber-500/20 px-2 py-0.5 rounded border border-amber-500/40 flex-row items-center">
-                <AlertTriangle size={9} color="#F59E0B" />
-                <Text className="text-amber-400 text-[9px] font-bold ml-1">LEMAH</Text>
-              </View>
+              <Badge variant="warning" size="xs">
+                LEMAH
+              </Badge>
             )}
-          </View>
+          </Card>
         </View>
 
         {/* Shutter Bar & Tombol Flip Camera */}
         <View className="absolute bottom-8 left-0 right-0 flex-row items-center justify-around px-8">
           {/* Tombol Flip Camera Depan / Belakang */}
           <TouchableOpacity
-            className="w-13 h-13 rounded-full bg-pekon-surface/85 border border-pekon-border items-center justify-center p-3"
+            className="w-12 h-12 rounded-full bg-popover/90 border border-border items-center justify-center"
             onPress={() => setFacing((prev) => (prev === 'front' ? 'back' : 'front'))}
             accessible={true}
             accessibilityLabel="Putar kamera depan atau belakang"
           >
-            <SwitchCamera size={22} color="#00F2A9" />
+            <SwitchCamera size={20} color="#10B981" />
           </TouchableOpacity>
 
           {/* Tombol Ambil Foto Shutter */}
           <View className="items-center">
             <TouchableOpacity
-              className="w-20 h-20 rounded-full border-4 border-pekon-primary bg-pekon-surface/80 items-center justify-center"
+              className="w-20 h-20 rounded-full border-4 border-primary bg-background/80 items-center justify-center shadow-lg"
               onPress={onCapture}
               disabled={isCapturing}
               accessible={true}
               accessibilityLabel="Ambil foto bukti kerja selfie proof of work"
             >
               {isCapturing ? (
-                <ActivityIndicator color="#00F2A9" />
+                <Spinner size="md" />
               ) : (
-                <View className="w-14 h-14 rounded-full bg-pekon-primary" />
+                <View className="w-14 h-14 rounded-full bg-primary" />
               )}
             </TouchableOpacity>
-            <Text className="text-white text-[11px] font-semibold mt-1.5">
+            <Text className="text-foreground text-[11px] font-semibold mt-1.5 shadow-sm">
               {facing === 'front' ? 'Selfie Kerja' : 'Foto Objek'}
             </Text>
           </View>
 
           {/* Placeholder Seimbang */}
-          <View className="w-13 h-13 p-3 opacity-0">
-            <SwitchCamera size={22} color="#00F2A9" />
+          <View className="w-12 h-12 opacity-0">
+            <SwitchCamera size={20} color="#10B981" />
           </View>
         </View>
       </CameraView>

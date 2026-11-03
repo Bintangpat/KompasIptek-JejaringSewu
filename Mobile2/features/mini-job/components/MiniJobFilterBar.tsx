@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { Plus } from 'lucide-react-native';
+
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 
 interface MiniJobFilterBarProps {
   currentFilter: 'ALL' | 'DISABILITY' | 'OPEN';
@@ -14,19 +17,19 @@ export const MiniJobFilterBar: React.FC<MiniJobFilterBarProps> = ({
   onPostJobPress,
 }) => {
   return (
-    <View className="bg-pekon-surface/70 px-4 py-2.5 border-b border-pekon-border/60 flex-row items-center justify-between">
+    <View className="bg-card px-4 py-2.5 border-b border-border flex-row items-center justify-between">
       <View className="flex-row gap-1.5 items-center flex-1 mr-2">
         <TouchableOpacity
           onPress={() => onFilterChange('OPEN')}
-          className={`px-2.5 py-1 rounded-md border ${
+          className={`px-3 py-1.5 rounded-lg border ${
             currentFilter === 'OPEN'
-              ? 'bg-pekon-primary/20 border-pekon-primary'
-              : 'bg-pekon-card border-pekon-border'
+              ? 'bg-primary/10 border-primary'
+              : 'bg-muted/40 border-border'
           }`}
         >
           <Text
-            className={`text-[11px] font-semibold ${
-              currentFilter === 'OPEN' ? 'text-pekon-primary' : 'text-pekon-muted'
+            className={`text-xs font-semibold ${
+              currentFilter === 'OPEN' ? 'text-primary' : 'text-muted-foreground'
             }`}
           >
             Tersedia
@@ -35,15 +38,15 @@ export const MiniJobFilterBar: React.FC<MiniJobFilterBarProps> = ({
 
         <TouchableOpacity
           onPress={() => onFilterChange('DISABILITY')}
-          className={`px-2.5 py-1 rounded-md border ${
+          className={`px-3 py-1.5 rounded-lg border ${
             currentFilter === 'DISABILITY'
-              ? 'bg-cyan-500/20 border-cyan-400'
-              : 'bg-pekon-card border-pekon-border'
+              ? 'bg-cyan-500/10 border-cyan-500'
+              : 'bg-muted/40 border-border'
           }`}
         >
           <Text
-            className={`text-[11px] font-semibold ${
-              currentFilter === 'DISABILITY' ? 'text-cyan-400' : 'text-pekon-muted'
+            className={`text-xs font-semibold ${
+              currentFilter === 'DISABILITY' ? 'text-cyan-400' : 'text-muted-foreground'
             }`}
           >
             Disabilitas
@@ -52,15 +55,15 @@ export const MiniJobFilterBar: React.FC<MiniJobFilterBarProps> = ({
 
         <TouchableOpacity
           onPress={() => onFilterChange('ALL')}
-          className={`px-2.5 py-1 rounded-md border ${
+          className={`px-3 py-1.5 rounded-lg border ${
             currentFilter === 'ALL'
-              ? 'bg-pekon-primary/20 border-pekon-primary'
-              : 'bg-pekon-card border-pekon-border'
+              ? 'bg-primary/10 border-primary'
+              : 'bg-muted/40 border-border'
           }`}
         >
           <Text
-            className={`text-[11px] font-semibold ${
-              currentFilter === 'ALL' ? 'text-pekon-primary' : 'text-pekon-muted'
+            className={`text-xs font-semibold ${
+              currentFilter === 'ALL' ? 'text-primary' : 'text-muted-foreground'
             }`}
           >
             Semua
@@ -68,15 +71,15 @@ export const MiniJobFilterBar: React.FC<MiniJobFilterBarProps> = ({
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity
-        className="bg-pekon-primary px-3 py-1.5 rounded-lg flex-row items-center"
+      <Button
+        variant="primary"
+        size="sm"
         onPress={onPostJobPress}
-        accessible={true}
-        accessibilityLabel="Buka formulir posting lowongan kerja mikro"
+        className="flex-row items-center"
       >
-        <Plus size={14} color="#0F1416" />
-        <Text className="text-pekon-bg text-xs font-bold ml-1">Pasang Tugas</Text>
-      </TouchableOpacity>
+        <Plus size={14} color="#FFFFFF" />
+        <Text className="text-primary-foreground text-xs font-bold ml-1">Pasang Tugas</Text>
+      </Button>
     </View>
   );
 };

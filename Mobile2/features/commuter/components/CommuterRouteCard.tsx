@@ -1,6 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { User, Radio, MapPin, ArrowRight, PackageCheck, PlusCircle } from 'lucide-react-native';
+import { View } from 'react-native';
+import { User, MapPin, ArrowRight, PackageCheck } from 'lucide-react-native';
+
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 
 interface CommuterRouteCardProps {
   route: any;
@@ -14,71 +19,67 @@ export const CommuterRouteCard: React.FC<CommuterRouteCardProps> = ({
   const distanceKm = route.distance_meters ? (route.distance_meters / 1000).toFixed(1) : null;
 
   return (
-    <View className="bg-pekon-card border border-pekon-border rounded-xl p-4 mb-3">
+    <Card className="bg-card border-border p-4 mb-3">
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center">
-          <View className="w-6 h-6 rounded-full bg-pekon-primary/20 items-center justify-center mr-2">
-            <User size={13} color="#00F2A9" />
+          <View className="w-7 h-7 rounded-full bg-primary/10 items-center justify-center mr-2">
+            <User size={14} color="#10B981" />
           </View>
-          <Text className="text-white font-bold text-xs">
+          <Text className="text-foreground font-bold text-xs">
             {route.commuter?.fullName || 'Warga Komuter'}
           </Text>
         </View>
-        <View className="flex-row items-center bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
-          <Radio size={10} color="#34D399" />
-          <Text className="text-emerald-400 text-[10px] font-bold ml-1">AKTIF SEARAH</Text>
-        </View>
+        <Badge variant="success" size="xs">
+          AKTIF SEARAH
+        </Badge>
       </View>
 
       {/* Geospasial Route Card Visualizer */}
-      <View className="bg-pekon-bg border border-pekon-border/60 rounded-lg p-3 my-2.5">
+      <View className="bg-muted/30 border border-border/80 rounded-xl p-3 my-2.5">
         <View className="flex-row items-center justify-between mb-2">
           <View className="flex-row items-center flex-1 mr-2">
-            <MapPin size={14} color="#00F2A9" />
-            <Text className="text-white text-xs font-semibold ml-1.5 flex-1" numberOfLines={1}>
+            <MapPin size={14} color="#10B981" />
+            <Text className="text-foreground text-xs font-semibold ml-1.5 flex-1" numberOfLines={1}>
               {route.originName}
             </Text>
           </View>
           <ArrowRight size={14} color="#84958A" className="mx-1" />
           <View className="flex-row items-center flex-1 ml-2 justify-end">
             <MapPin size={14} color="#EF4444" />
-            <Text className="text-white text-xs font-semibold ml-1.5 flex-1 text-right" numberOfLines={1}>
+            <Text className="text-foreground text-xs font-semibold ml-1.5 flex-1 text-right" numberOfLines={1}>
               {route.destinationName}
             </Text>
           </View>
         </View>
 
         {/* Mini Route Progress Indicator */}
-        <View className="h-1.5 bg-pekon-surface rounded-full flex-row overflow-hidden my-1">
-          <View className="w-1/2 bg-pekon-primary rounded-full" />
+        <View className="h-1.5 bg-muted rounded-full flex-row overflow-hidden my-1">
+          <View className="w-1/2 bg-primary rounded-full" />
         </View>
 
         <View className="flex-row justify-between items-center mt-1">
-          <Text className="text-pekon-muted text-[10px]">
+          <Text className="text-muted-foreground text-[10px]">
             {distanceKm ? `Posisi kurir ~${distanceKm} km dari Anda` : 'Dalam jangkauan pekon'}
           </Text>
-          <Text className="text-pekon-primary text-[10px] font-bold">Patungan hemat 60%</Text>
+          <Text className="text-primary text-[10px] font-bold">Patungan hemat 60%</Text>
         </View>
       </View>
 
-      <View className="flex-row justify-between items-center pt-2 border-t border-pekon-border/60 mt-1">
+      <View className="flex-row justify-between items-center pt-2.5 border-t border-border mt-1">
         <View className="flex-row items-center">
           <PackageCheck size={14} color="#84958A" />
-          <Text className="text-pekon-muted text-xs ml-1">
+          <Text className="text-muted-foreground text-xs ml-1.5">
             {route.orders?.length || 0} titipan dalam perjalanan
           </Text>
         </View>
-        <TouchableOpacity
-          accessible={true}
-          accessibilityRole="button"
-          accessibilityLabel={`Titip barang ke rute ${route.destinationName}`}
-          className="bg-pekon-primary px-3.5 py-1.5 rounded-lg flex-row items-center"
+        <Button
+          variant="primary"
+          size="sm"
           onPress={() => onOrderPress(route)}
         >
-          <PlusCircle size={13} color="#0F1416" />
-          <Text className="text-pekon-bg text-xs font-bold ml-1">Titip Barang</Text>
-        </TouchableOpacity>
+          Titip Barang
+        </Button>
       </View>
-    </View>
+    </Card>
   );
 };

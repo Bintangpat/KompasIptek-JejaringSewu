@@ -1,0 +1,218 @@
+---
+title: Native rendering
+description: Hand a component to the platform's own UI toolkit with the native prop.
+---
+
+Five components can render the platform's real control instead of PanelUI's:
+`Button`, `Switch`, `Slider`, `Select` and `BottomSheet`. Pass `native` and
+rendering goes to SwiftUI on iOS and Jetpack Compose on Android.
+
+```tsx
+<Switch
+  native
+  value={enabled}
+  onValueChange={setEnabled}
+  label='Notifications'
+/>
+```
+
+## Why only these five
+
+These are the controls where a faithful re-implementation is not good enough. A
+switch, a slider, a picker, a sheet and a button are muscle memory — users
+notice when the animation curve, the spring, the haptic or the dismiss gesture
+is a near-miss, even when they cannot say why. Everything else in the library
+is better served by tokens and Reanimated, where matching the platform is not
+the goal.
+
+## Installation
+
+`@expo/ui` is an **optional** peer dependency. Nothing needs it until you write
+`native`.
+
+```bash
+npx expo install @expo/ui
+```
+
+<Callout>
+  Without the package installed, `native` is a silent no-op — the styled
+  component renders as usual. Nothing throws, nothing warns. The same applies on
+  web, which has neither SwiftUI nor Compose.
+</Callout>
+
+Check at runtime if you need to branch on it:
+
+```tsx
+import { hasNativeUI } from 'panelui-native'
+
+if (hasNativeUI()) {
+  // the platform control is available
+}
+```
+
+## Theme tokens do not apply
+
+This is the part that surprises people, so it is worth stating plainly: **in
+native mode the platform draws the control.** It uses its own colours, metrics,
+typography and press behaviour. Your theme does not reach it, `className` is
+ignored, and most of the component's own props go with it.
+
+That is the trade, not a bug. If you want the control to match your design
+system, do not pass `native`.
+
+## What survives per component
+
+### Button
+
+```tsx
+<Button native variant='outline' onPress={save}>
+  Save changes
+</Button>
+```
+
+| Prop                                                    | In native mode                                                                                      |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `children` (string)                                     | Becomes the button label                                                                            |
+| `onPress`                                               | Passed through                                                                                      |
+| `disabled`                                              | Passed through                                                                                      |
+| `variant`                                               | Mapped: `primary`/`secondary`/`destructive` → filled, `outline`/`social` → outlined, `ghost` → text |
+| `size`                                                  | Sets the height                                                                                     |
+| `systemImage`                                           | A glyph beside the label, named from the platform's symbol set. iOS only                            |
+| `fullWidth`, `className`                                | Ignored — see sizing below                                                                          |
+| `loading`, `spinnerProps`, `startContent`, `endContent` | Ignored                                                                                             |
+
+`loading` is the one to watch — a native button has no spinner state, so a
+loading button looks identical to an idle one. Disable it yourself, or do not
+use `native` on buttons that load.
+
+`startContent` is ignored because an element has to be hosted inside the native
+tree, and a hosted view inside a labelled button has no width anything can
+resolve. `systemImage` is how a native button gets an icon instead: it names one
+from the platform's own symbol set, and the platform draws it at its own size in
+the label's colour. Android has no equivalent set, so a button there is its
+label alone.
+
+A native button **sizes itself to its label**, the way a platform button is
+supposed to. It does not stretch to fill its container, which is why
+`fullWidth` is in the ignored list — wrap it if you need it placed rather than
+sized.
+
+### Switch
+
+```tsx
+<Switch native value={enabled} onValueChange={setEnabled} label='Wi-Fi' />
+```
+
+| Prop                                 | In native mode                                                                  |
+| ------------------------------------ | ------------------------------------------------------------------------------- |
+| `value`, `onValueChange`, `disabled` | Passed through                                                                  |
+| `label`                              | Text drawn beside the control — **native only**, the styled switch has no label |
+| `size`, `className`                  | Ignored                                                                         |
+
+### Slider
+
+```tsx
+<Slider
+  native
+  label='Brightness'
+  showValue
+  value={level}
+  onValueChange={setLevel}
+/>
+```
+
+| Prop                                 | In native mode                                                                        |
+| ------------------------------------ | ------------------------------------------------------------------------------------- |
+| `value` / `onValueChange`            | Passed through                                                                        |
+| `min`, `max`, `step`                 | Passed through                                                                        |
+| `disabled`                           | Passed through                                                                        |
+| `label`, `showValue`, `formatValue`  | **Still yours** — the caption row above the track is not part of the platform control |
+| `color`, `size`, the slot classNames | Ignored                                                                               |
+| `onValueCommit`                      | Not fired — the platform reports changes, not gesture ends                            |
+
+### Select
+
+```tsx
+<Select native value={fruit} onValueChange={setFruit}>
+  <Select.Item value='apple' label='Apple' />
+  <Select.Item value='banana' label='Banana' />
+</Select>
+```
+
+| Prop                                 | In native mode                                                       |
+| ------------------------------------ | -------------------------------------------------------------------- |
+| `value`, `onValueChange`, `disabled` | Passed through                                                       |
+| `Select.Item` children               | Declare the options, same as always                                  |
+| `nativeAppearance`                   | `menu` (default) is a dropdown; `wheel` is an inline rotor, iOS only |
+| `placeholder`, `title`, `className`  | Ignored                                                              |
+
+`placeholder` has nowhere to go: a native picker always has a selection, so an
+unset `value` shows the **first option** rather than placeholder text. Set an
+initial value, or add an explicit "None" item.
+
+### BottomSheet
+
+```tsx
+<BottomSheet
+  native
+  snapPoints={['half', 'full']}
+  open={open}
+  onOpenChange={setOpen}
+>
+  <BottomSheet.Content>
+    <Text>Anything you like in here.</Text>
+  </BottomSheet.Content>
+</BottomSheet>
+```
+
+| Prop                                    | In native mode                                                  |
+| --------------------------------------- | --------------------------------------------------------------- |
+| `open` / `onOpenChange` / `defaultOpen` | Passed through                                                  |
+| `snapPoints`                            | Detents the sheet rests at — **native only**                    |
+| `nativeBackground`                      | Paints the sheet solid instead of translucent — **native only** |
+| `dismissible`                           | Passed through                                                  |
+| `BottomSheet.Content` `className`       | Ignored — the platform draws the container                      |
+
+The content _inside_ the sheet is still yours and still themed. Only the
+chrome — the container, the corner radius, the grabber, the backdrop, the
+dismiss gesture — belongs to the platform.
+
+`snapPoints` takes `'half'`, `'full'`, `{ fraction }` or `{ height }`. The last
+two are iOS-only; Android snaps them to the nearest of half and full.
+
+The platform draws its sheet in a translucent material, which on iOS 26 is
+Liquid Glass. `nativeBackground` is the way out of it: `true` paints the sheet
+the theme's popover surface, and a string paints that colour. It reaches the
+sheet's own chrome — the grabber's strip and the safe-area inset — where a
+background on the content would stop short of both. On iOS below 16.4 it is
+inert and the sheet keeps its material.
+
+## Notes
+
+Every native control lets the host follow the platform's own size, and any
+control that needs a definite size is given one **on the control**, not on the
+host.
+
+That distinction is the whole of it. Sizing the host and leaving the control
+unsized inside it hands the platform a box the control never agreed to: SwiftUI
+and Compose both lay out against their own intrinsic size and only settle into
+the box when something forces a second pass — which for a button is the first
+press, and is what used to make it jump. A control with a definite size of its
+own has nothing left to recompute.
+
+Controls with no intrinsic width — the slider and the picker — match only their
+height and take their width from ordinary layout, since "as wide as the row"
+is not something the platform can work out on its own.
+
+The same reasoning applies inside the native sheet: its content is given a
+floor matching the first detent, because a hosted box shorter than the sheet
+gets centred in it, which is why short sheet content used to float in the
+middle instead of starting at the top.
+
+The native sheet stays mounted and toggles its presentation, where the styled
+sheet unmounts on close. If you rely on the content unmounting to reset state,
+key it or reset it yourself.
+
+`@expo/ui` is versioned with the Expo SDK and needs SDK 56 or newer for these
+components. On SDK 56+ it runs in Expo Go; on older SDKs you need a development
+build.

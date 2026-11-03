@@ -1,17 +1,13 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  TextInput,
-  TouchableOpacity,
-  Switch,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from 'react-native';
-import { X, HeartHandshake } from 'lucide-react-native';
+import { View } from 'react-native';
+import { HeartHandshake } from 'lucide-react-native';
+
+import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Text } from '@/components/ui/text';
+import { Switch } from '@/components/ui/switch';
+import { Card } from '@/components/ui/card';
 
 interface CreateMiniJobModalProps {
   visible: boolean;
@@ -38,6 +34,8 @@ export const CreateMiniJobModal: React.FC<CreateMiniJobModalProps> = ({
 
   const handleSubmit = async () => {
     const wage = parseFloat(jobWage);
+    if (!jobTitle.trim() || !jobDescription.trim() || isNaN(wage) || wage <= 0) return;
+
     await onSubmit({
       title: jobTitle.trim(),
       description: jobDescription.trim(),
@@ -50,101 +48,72 @@ export const CreateMiniJobModal: React.FC<CreateMiniJobModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1 bg-black/80 justify-end"
-      >
-        <View className="bg-pekon-surface rounded-t-3xl border-t border-pekon-border p-5 space-y-4 max-h-[90%]">
-          <View className="flex-row justify-between items-center pb-2 border-b border-pekon-border/60">
-            <View>
-              <Text className="text-white font-bold text-base">Buka Lowongan Kerja Mikro</Text>
-              <Text className="text-pekon-muted text-xs">Berdayakan tenaga kerja warga desa dengan upah harian adil</Text>
-            </View>
-            <TouchableOpacity onPress={onClose}>
-              <X size={20} color="#84958A" />
-            </TouchableOpacity>
-          </View>
+    <BottomSheet open={visible} onOpenChange={(open) => !open && onClose()}>
+      <BottomSheet.Content>
+        <BottomSheet.Header title="Buka Lowongan Kerja Mikro" />
 
-          <ScrollView className="space-y-3">
-            <View>
-              <Text className="text-slate-300 text-xs font-semibold mb-1">Judul Tugas / Pekerjaan</Text>
-              <TextInput
-                className="bg-pekon-card border border-pekon-border rounded-xl p-3 text-white text-xs"
-                placeholder="Misal: Sortir Biji Kopi, Antar Kardus Bibit"
-                placeholderTextColor="#84958A"
-                value={jobTitle}
-                onChangeText={setJobTitle}
-              />
+        <BottomSheet.Body>
+          <View className="gap-3.5 py-1">
+            <View className="bg-primary/10 border border-primary/20 p-3 rounded-xl flex-row items-center">
+              <HeartHandshake size={18} color="#10B981" />
+              <Text className="text-foreground text-xs ml-2 flex-1">
+                Berdayakan tenaga kerja warga desa dengan upah harian adil dan perlindungan reputasi.
+              </Text>
             </View>
 
-            <View className="mt-2">
-              <Text className="text-slate-300 text-xs font-semibold mb-1">Deskripsi & Instruksi Kerja</Text>
-              <TextInput
-                className="bg-pekon-card border border-pekon-border rounded-xl p-3 text-white text-xs"
-                placeholder="Tuliskan detail pekerjaan, lokasi dan estimasi waktu..."
-                placeholderTextColor="#84958A"
-                multiline
-                numberOfLines={3}
-                value={jobDescription}
-                onChangeText={setJobDescription}
-              />
-            </View>
+            <Input
+              label="Judul Tugas / Pekerjaan *"
+              placeholder="Misal: Sortir Biji Kopi, Bersihkan Saluran Air"
+              value={jobTitle}
+              onChangeText={setJobTitle}
+            />
 
-            <View className="mt-2">
-              <Text className="text-slate-300 text-xs font-semibold mb-1">Nominal Upah Tunai (Rp)</Text>
-              <TextInput
-                className="bg-pekon-card border border-pekon-border rounded-xl p-3 text-white text-xs"
-                placeholder="Contoh: 25000"
-                placeholderTextColor="#84958A"
-                keyboardType="numeric"
-                value={jobWage}
-                onChangeText={setJobWage}
-              />
-            </View>
+            <Input
+              label="Deskripsi & Instruksi Kerja *"
+              placeholder="Tuliskan detail pekerjaan, lokasi dan estimasi durasi..."
+              value={jobDescription}
+              onChangeText={setJobDescription}
+            />
 
-            {/* Switch Zero-Discrimination */}
-            <View className="bg-pekon-card p-3 rounded-xl border border-pekon-border/70 flex-row items-center justify-between mt-3">
+            <Input
+              label="Nominal Upah Tunai (Rp) *"
+              placeholder="Contoh: 35000"
+              keyboardType="numeric"
+              value={jobWage}
+              onChangeText={setJobWage}
+            />
+
+            {/* Inclusivity Switch */}
+            <Card className="bg-card border-border p-3.5 flex-row items-center justify-between">
               <View className="flex-1 mr-3">
-                <View className="flex-row items-center">
-                  <HeartHandshake size={14} color="#00F2A9" />
-                  <Text className="text-white text-xs font-bold ml-1.5">Ramah Disabilitas (Zero-Discrimination)</Text>
-                </View>
-                <Text className="text-pekon-subtle text-[10px] mt-0.5">
-                  Tugas dapat diselesaikan dengan aman oleh warga difabel / lansia. Kunci tugas otomatis (auto-accept).
+                <Text className="text-foreground font-semibold text-xs">
+                  Inklusif Ramah Disabilitas
+                </Text>
+                <Text className="text-muted-foreground text-[10px] mt-0.5">
+                  Tugas dapat dikerjakan rekan disabilitas fisik / sensorik.
                 </Text>
               </View>
               <Switch
                 value={jobIsDisabilityFriendly}
                 onValueChange={setJobIsDisabilityFriendly}
-                trackColor={{ false: '#374151', true: '#00F2A9' }}
-                thumbColor={jobIsDisabilityFriendly ? '#0F1416' : '#9CA3AF'}
+                size="md"
               />
-            </View>
-          </ScrollView>
-
-          <View className="flex-row gap-3 pt-2">
-            <TouchableOpacity
-              className="flex-1 bg-pekon-card border border-pekon-border py-3 rounded-xl items-center"
-              onPress={onClose}
-            >
-              <Text className="text-pekon-muted font-bold text-xs">Batal</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="flex-1 bg-pekon-primary py-3 rounded-xl items-center flex-row justify-center"
-              onPress={handleSubmit}
-              disabled={submitting}
-            >
-              {submitting ? (
-                <ActivityIndicator size="small" color="#0F1416" />
-              ) : (
-                <Text className="text-pekon-bg font-bold text-xs">Pasang Lowongan</Text>
-              )}
-            </TouchableOpacity>
+            </Card>
           </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+        </BottomSheet.Body>
+
+        <BottomSheet.Footer>
+          <Button
+            variant="primary"
+            size="lg"
+            loading={submitting}
+            onPress={handleSubmit}
+            className="w-full"
+          >
+            Publikasikan Tugas ke Pekon
+          </Button>
+        </BottomSheet.Footer>
+      </BottomSheet.Content>
+    </BottomSheet>
   );
 };

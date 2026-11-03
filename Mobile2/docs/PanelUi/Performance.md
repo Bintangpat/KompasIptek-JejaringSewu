@@ -1,0 +1,160 @@
+---
+title: Performance
+description: The rules every component follows, and how to measure whether they held.
+---
+
+Performance is the reason this library exists in the form it does. Three rules
+decide almost everything about how a component here is written.
+
+## 1. Animation runs on the UI thread, always
+
+React Native has two threads that matter. JavaScript runs your components,
+effects and event handlers. The UI thread draws. An animation driven from
+JavaScript stalls the moment JavaScript is busy — and JavaScript is busiest
+exactly when something interesting is happening: a list rendering, a response
+streaming, a screen transitioning.
+
+Every animation in PanelUI is a Reanimated worklet: the values live in shared
+values and the styles are computed in `useAnimatedStyle`, so they keep their
+frame rate no matter what React is doing.
+
+```tsx
+// This is the shape everything here uses.
+const progress = useSharedValue(0)
+
+useEffect(() => {
+  progress.value = withSpring(open ? 1 : 0)
+}, [open])
+
+const style = useAnimatedStyle(() => ({
+  opacity: progress.value,
+  transform: [{ translateY: (1 - progress.value) * 12 }],
+}))
+```
+
+<Callout type="warn">
+  **Never use React Native's core `Animated`** in code that runs alongside this
+  library. Even with `useNativeDriver`, its API surface encourages patterns —
+  listeners, `setValue` from JS, non-transform properties — that put the
+  animation back on the JavaScript thread.
+</Callout>
+
+## 2. Nothing re-renders per frame
+
+A component that calls `setState` from a scroll handler, a gesture or a timer
+re-renders its whole subtree on every frame of the interaction. That is the
+most common performance bug in a React Native app, and it is invisible on a
+fast phone in development.
+
+`ScrollFade` is the worked example. It tracks scroll offset, content size and
+viewport size in shared values written from `useAnimatedScrollHandler`, and its
+edges read them in `useAnimatedStyle`. Scrolling a list wrapped in it triggers
+**zero** React renders.
+
+The same applies to your own code:
+
+- Scroll position that only drives a style belongs in a shared value, not state.
+- A value that only drives an animation never needs to be state at all.
+- If you do need it in React, throttle it — 20 updates a second is plenty for
+  anything a human reads.
+
+## 3. Transform and opacity, not layout
+
+Animating `width`, `height`, `margin` or `top` forces a layout pass. Animating
+`transform` and `opacity` does not — they are composited. Where an effect can
+be expressed either way, this library picks the composited one:
+
+| Effect           | How it is done here                                      |
+| ---------------- | -------------------------------------------------------- |
+| Sheet slide-in   | `translateY`, not `height`                               |
+| Press feedback   | `scale` and `opacity`, not padding                       |
+| Shimmer sweep    | `translateX` behind a mask, not a moving gradient stop   |
+| Accordion expand | Layout transition, measured once, not an animated height |
+
+## Measure in a release build
+
+This is the one that catches people, and it is worth stating on its own.
+
+**Debug builds inflate Reanimated's per-frame cost by roughly two to three
+times.** An animation that appears to blow the 16.7ms frame budget in
+development can land comfortably inside it in release. Profiling against debug
+numbers means optimising something that is not actually slow — and worse, it
+hides the things that are.
+
+```bash
+# iOS
+npx expo run:ios --configuration Release
+
+# Android
+npx expo run:android --variant release
+```
+
+Then measure on a real device — ideally the slowest one you intend to support.
+A simulator runs on your desktop's CPU and tells you very little about a
+mid-range Android phone.
+
+<Callout>
+  Expo published a benchmark of what each animation approach actually costs per
+  frame on real iOS and Android hardware:
+  [The real cost of React Native animations](https://expo.dev/blog/the-real-cost-of-react-native-animations-benchmarking-every-approach).
+  Worth reading before you decide any of this is premature.
+</Callout>
+
+## Where the cost actually is
+
+In rough order of how often each one is the real problem:
+
+1. **Re-rendering a list on every update.** Memoise the row and keep
+   `renderItem` in a `useCallback`, or the list re-renders every row whenever
+   anything changes.
+2. **`ScrollView` where a `FlatList` belongs.** A `ScrollView` renders every
+   child, every time, with no recycling.
+3. **State written from a per-frame event.** See rule 2.
+4. **Work in a `useAnimatedStyle`.** It runs every frame. Anything that does
+   not depend on a shared value should be computed outside it.
+5. **Large images without dimensions.** They cause a layout pass when they
+   land, mid-scroll.
+
+## Reduced motion
+
+Every looping animation here — `Shimmer`, `Progress`'s indeterminate state —
+checks `useReducedMotion()` and renders a static equivalent when the OS setting
+is on. It is an accessibility requirement, and it is also free performance for
+the users who enable it.
+
+If you write your own looping animation, do the same:
+
+```tsx
+const reducedMotion = useReducedMotion()
+
+useEffect(() => {
+  if (reducedMotion) return
+  progress.value = withRepeat(withTiming(1, { duration: 1200 }), -1, true)
+}, [reducedMotion])
+```
+
+## Related
+
+- [Streaming performance](/docs/ai/streaming-performance) — the same rules under
+  the specific load of a token-by-token AI response.
+- [ScrollFade](/docs/components/scroll-fade) — the zero-re-render scroll
+  pattern, with the caveat it imposes on your own `onScroll`.
+
+## Component scale budgets
+
+Aggregate package and example ceilings tell you that the repository grew, not
+which component caused it. The component scale gate reports the owner,
+representative workload, measured operation or mount count, budget, and
+remaining headroom:
+
+```bash
+npm run benchmark:components --workspace=panelui-native
+```
+
+The current reviewed workloads are: a pathological small-content Marquee in a
+390-point viewport; **40 compound Timeline items** (use a bounded data/list path
+for longer histories); BarChart at 500 rows by four stacked series;
+MessageScroller's initial, batch, and viewport windows; and TimePicker's
+1,440-value ruler. These are local contracts rather than claims about device
+frame time. Profile release builds for CPU/layout cost, and add a row when a
+component introduces multiplicative rendering or advertises large-data use.

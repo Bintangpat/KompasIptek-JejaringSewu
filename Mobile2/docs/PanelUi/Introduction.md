@@ -1,0 +1,59 @@
+---
+title: Introduction
+description: PanelUI is an accessible, high-performance React Native component library for Expo, styled with Tailwind CSS and animated on the UI thread.
+---
+
+**PanelUI** is a React Native component library for Expo apps. 141 typed component modules — bottom
+sheets, dialogs, selects, toasts, forms — styled with Tailwind CSS v4 and animated on the UI
+thread with Reanimated. It ships no native code, so it runs in Expo Go with no prebuild.
+
+```tsx
+import { PanelUIProvider, Button, Card } from 'panelui-native'
+
+export default function App() {
+  return (
+    <PanelUIProvider>
+      <Card>
+        <Card.Header>
+          <Card.Title>Create project</Card.Title>
+          <Card.Description>
+            Deploy your new project in one click.
+          </Card.Description>
+        </Card.Header>
+        <Card.Footer>
+          <Button>Deploy</Button>
+        </Card.Footer>
+      </Card>
+    </PanelUIProvider>
+  )
+}
+```
+
+## Why PanelUI
+
+- **Tailwind CSS for React Native**, via [Uniwind](https://uniwind.dev) — no Babel transform, and
+  roughly 2.4–3× faster styling than NativeWind.
+- **60fps animations on the UI thread** with Reanimated 4. Press feedback, switches, sheets,
+  dialogs and tabs never touch the JS thread.
+- **Six built-in themes** across three families. A theme sets radius as well as colour, so
+  switching one restyles the shape of the UI too.
+- **Native dark mode** — theme changes are applied natively by Uniwind, without re-rendering your
+  component tree.
+- **Accessible by default** — every interactive component wires up `accessibilityRole`, mirrors
+  its state through `accessibilityState`, and hides decorative icons from screen readers.
+- **TypeScript, tree-shakeable, zero native modules.**
+
+## Design language
+
+The token set is semantic rather than literal — `background`, `primary`, `muted`,
+`destructive` — so a component never names a colour and switching theme changes everything at
+once. The component APIs are compound: `Card.Header` and `Dialog.Content` compose the way the
+markup reads.
+
+## Next steps
+
+<Cards>
+  <Card title="Installation" href="/docs/installation" />
+  <Card title="Customization" href="/docs/customization/colors" />
+  <Card title="Components" href="/docs/components" />
+</Cards>

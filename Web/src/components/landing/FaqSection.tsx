@@ -62,59 +62,67 @@ export function FaqSection() {
   };
 
   return (
-    <section id="faq" className="bg-[#0F1416] py-24 border-t border-[#3B4A41]/30">
+    <section id="faq" className="bg-white dark:bg-[#0F1416] py-24 border-t border-slate-200 dark:border-[#3B4A41]/30 transition-colors">
       <div className="mx-auto max-w-7xl px-4 sm:px-16 lg:px-20 space-y-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
 
           {/* Left Column (#1:385) */}
           <div className="lg:col-span-5 space-y-4">
-            <span className="font-mono text-xs font-semibold text-[#84958A] tracking-wider uppercase">
+            <span className="font-mono text-xs font-semibold text-slate-500 dark:text-[#84958A] tracking-wider uppercase">
               KONSULTASI WARGA
             </span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-[-0.02em] text-[#DFE2EB] leading-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-[-0.02em] text-slate-900 dark:text-[#DFE2EB] leading-tight transition-colors">
               Sebelum Kamu Bergabung:
               <br />
-              <span className="text-[#4EDEA3]">
+              <span className="text-emerald-600 dark:text-[#4EDEA3]">
                 Jawaban untuk Hal yang Sering Ditanyakan
               </span>
             </h2>
-            <p className="text-xs sm:text-sm text-[#B9CBBF] leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-[#B9CBBF] leading-relaxed transition-colors">
               Transparansi penuh tata cara partisipasi, bagi hasil, dan jaminan gotong royong warga tanpa beban calo.
             </p>
           </div>
 
-          {/* Right Column: 8 Accordion Details (#1:392) */}
-          <div className="lg:col-span-7 space-y-2.5">
+          {/* Right Column: 8 Accordion Details (#1:392) - Fully Accessible Keyboard Navigation */}
+          <div className="lg:col-span-7 space-y-2.5" role="region" aria-label="Daftar Pertanyaan yang Sering Diajukan">
             {FAQ_ITEMS.map((item) => {
               const isOpen = openId === item.id;
               return (
                 <div
                   key={item.id}
-                  className="rounded border border-[#3B4A41]/40 bg-[#0A0E14]/80 backdrop-blur-md overflow-hidden transition-all hover:border-[#00F2A9]/30"
+                  className="rounded-xl border border-slate-200 dark:border-[#3B4A41]/40 bg-slate-50/90 dark:bg-[#0A0E14]/80 backdrop-blur-md overflow-hidden transition-all hover:border-emerald-500/40 dark:hover:border-[#00F2A9]/30 shadow-sm dark:shadow-none"
                 >
                   <button
                     type="button"
-                    onClick={() => toggleItem(item.id)}
+                    id={`faq-btn-${item.id}`}
                     aria-expanded={isOpen}
-                    className="w-full p-4 text-left flex items-center justify-between gap-4 focus:outline-none focus:ring-1 focus:ring-[#00F2A9]"
+                    aria-controls={`faq-answer-${item.id}`}
+                    onClick={() => toggleItem(item.id)}
+                    className="w-full p-4 text-left flex items-center justify-between gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0F1416] transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-xs font-bold text-[#84958A] w-5">
+                      <span className="font-mono text-xs font-bold text-slate-500 dark:text-[#84958A] w-5">
                         {item.id}
                       </span>
-                      <span className="text-xs sm:text-sm font-semibold text-[#DFE2EB]">
+                      <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-[#DFE2EB]">
                         {item.question}
                       </span>
                     </div>
                     <ChevronDown
-                      className={`h-4 w-4 text-[#84958A] shrink-0 transition-transform duration-200 ${
-                        isOpen ? "rotate-180 text-[#00F2A9]" : ""
+                      className={`h-4 w-4 text-slate-500 dark:text-[#84958A] shrink-0 transition-transform duration-200 ${
+                        isOpen ? "rotate-180 text-emerald-600 dark:text-[#00F2A9]" : ""
                       }`}
+                      aria-hidden="true"
                     />
                   </button>
 
                   {isOpen && (
-                    <div className="px-4 pb-4 pt-1 pl-12 text-xs font-mono text-[#B9CBBF] leading-relaxed border-t border-[#3B4A41]/20">
+                    <div
+                      id={`faq-answer-${item.id}`}
+                      role="region"
+                      aria-labelledby={`faq-btn-${item.id}`}
+                      className="px-4 pb-4 pt-1 pl-12 text-xs font-mono text-slate-600 dark:text-[#B9CBBF] leading-relaxed border-t border-slate-200/80 dark:border-[#3B4A41]/20"
+                    >
                       {item.answer}
                     </div>
                   )}

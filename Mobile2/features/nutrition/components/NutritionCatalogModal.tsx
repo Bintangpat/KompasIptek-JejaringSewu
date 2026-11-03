@@ -1,6 +1,11 @@
 import React from 'react';
-import { View, Text, Modal, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { X } from 'lucide-react-native';
+import { View } from 'react-native';
+import { Apple } from 'lucide-react-native';
+
+import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
 import { NutritionPackageCard } from './NutritionPackageCard';
 
 interface NutritionCatalogModalProps {
@@ -21,37 +26,52 @@ export const NutritionCatalogModal: React.FC<NutritionCatalogModalProps> = ({
   onRedeem,
 }) => {
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View className="flex-1 bg-black/80 justify-end">
-        <View className="bg-pekon-surface rounded-t-3xl border-t border-pekon-border p-5 max-h-[85%]">
-          <View className="flex-row justify-between items-center pb-3 border-b border-pekon-border">
-            <View>
-              <Text className="text-white font-bold text-base">Katalog Pangan Bergizi Pekon</Text>
-              <Text className="text-pekon-muted text-xs">Pencegahan Stunting Berbasis Poin PoW</Text>
-            </View>
-            <TouchableOpacity onPress={onClose}>
-              <X size={20} color="#84958A" />
-            </TouchableOpacity>
-          </View>
+    <BottomSheet open={visible} onOpenChange={(open) => !open && onClose()}>
+      <BottomSheet.Content>
+        <BottomSheet.Header title="Katalog Pangan Bergizi Pekon" />
 
-          {loading ? (
-            <ActivityIndicator size="large" color="#00F2A9" className="my-8" />
-          ) : (
-            <FlatList
-              data={packages}
-              keyExtractor={(item) => item.id}
-              className="my-3"
-              renderItem={({ item }) => (
+        <BottomSheet.Body>
+          <View className="py-1">
+            <View className="bg-primary/10 border border-primary/20 p-3 rounded-xl flex-row items-center mb-3">
+              <Apple size={18} color="#10B981" />
+              <Text className="text-foreground text-xs ml-2 flex-1">
+                Pencegahan Stunting Berbasis Poin PoW. Tukarkan poin bukti kerja Anda dengan paket pangan hewani bergizi.
+              </Text>
+            </View>
+
+            {loading ? (
+              <View className="py-8 items-center">
+                <Spinner size="lg" />
+                <Text className="text-muted-foreground text-xs mt-3">Memuat paket pangan pekon...</Text>
+              </View>
+            ) : packages.length === 0 ? (
+              <View className="py-8 items-center">
+                <Text className="text-muted-foreground text-xs">Belum ada paket pangan aktif saat ini.</Text>
+              </View>
+            ) : (
+              packages.map((pkg) => (
                 <NutritionPackageCard
-                  item={item}
-                  isRedeeming={redeemingPackageId === item.id}
+                  key={pkg.id}
+                  item={pkg}
+                  isRedeeming={redeemingPackageId === pkg.id}
                   onRedeem={onRedeem}
                 />
-              )}
-            />
-          )}
-        </View>
-      </View>
-    </Modal>
+              ))
+            )}
+          </View>
+        </BottomSheet.Body>
+
+        <BottomSheet.Footer>
+          <Button
+            variant="outline"
+            size="md"
+            onPress={onClose}
+            className="w-full"
+          >
+            Tutup
+          </Button>
+        </BottomSheet.Footer>
+      </BottomSheet.Content>
+    </BottomSheet>
   );
 };

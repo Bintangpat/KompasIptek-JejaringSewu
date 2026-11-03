@@ -1,15 +1,11 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  Modal,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { X } from 'lucide-react-native';
+import { View } from 'react-native';
+import { Sprout } from 'lucide-react-native';
+
+import { BottomSheet } from '@/components/ui/bottom-sheet';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Text } from '@/components/ui/text';
 
 interface CreateHarvestModalProps {
   visible: boolean;
@@ -35,6 +31,8 @@ export const CreateHarvestModal: React.FC<CreateHarvestModalProps> = ({
   const handleSubmit = async () => {
     const kg = parseFloat(estimatedKg);
     const minPrice = parseFloat(minPricePerKg);
+    if (!commodityName.trim() || isNaN(kg) || isNaN(minPrice)) return;
+
     await onSubmit({
       commodityName: commodityName.trim(),
       estimatedKg: kg,
@@ -46,81 +44,56 @@ export const CreateHarvestModal: React.FC<CreateHarvestModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1 bg-black/80 justify-end"
-      >
-        <View className="bg-pekon-surface rounded-t-3xl border-t border-pekon-border p-5 space-y-4">
-          <View className="flex-row justify-between items-center pb-2 border-b border-pekon-border/60">
-            <View>
-              <Text className="text-white font-bold text-base">Posting Hasil Panen Baru</Text>
-              <Text className="text-pekon-muted text-xs">Buka lelang hasil bumi ke jaringan pengepul jujur pekon</Text>
+    <BottomSheet open={visible} onOpenChange={(open) => !open && onClose()}>
+      <BottomSheet.Content>
+        <BottomSheet.Header title="Posting Hasil Panen Baru" />
+
+        <BottomSheet.Body>
+          <View className="gap-3.5 py-1">
+            <View className="bg-primary/10 border border-primary/20 p-3 rounded-xl flex-row items-center">
+              <Sprout size={18} color="#10B981" />
+              <Text className="text-foreground text-xs ml-2 flex-1">
+                Buka lelang hasil bumi ke jaringan pengepul jujur pekon dengan transparansi harga.
+              </Text>
             </View>
-            <TouchableOpacity onPress={onClose}>
-              <X size={20} color="#84958A" />
-            </TouchableOpacity>
+
+            <Input
+              label="Nama Komoditas Panen *"
+              placeholder="Misal: Singkong Mukibat, Kakao Fermentasi, Ikan Nila"
+              value={commodityName}
+              onChangeText={setCommodityName}
+            />
+
+            <Input
+              label="Estimasi Berat Panen (Kg) *"
+              placeholder="Contoh: 1500"
+              keyboardType="numeric"
+              value={estimatedKg}
+              onChangeText={setEstimatedKg}
+            />
+
+            <Input
+              label="Batas Minimal Harga Jual (Rp/Kg) *"
+              placeholder="Contoh: 2500"
+              keyboardType="numeric"
+              value={minPricePerKg}
+              onChangeText={setMinPricePerKg}
+            />
           </View>
+        </BottomSheet.Body>
 
-          <View className="space-y-3">
-            <View>
-              <Text className="text-slate-300 text-xs font-semibold mb-1">Nama Komoditas Panen</Text>
-              <TextInput
-                className="bg-pekon-card border border-pekon-border rounded-xl p-3 text-white text-xs"
-                placeholder="Misal: Singkong Mukibat, Kakao Fermentasi, Ikan Nila"
-                placeholderTextColor="#84958A"
-                value={commodityName}
-                onChangeText={setCommodityName}
-              />
-            </View>
-
-            <View>
-              <Text className="text-slate-300 text-xs font-semibold mb-1">Estimasi Berat Panen (Kg)</Text>
-              <TextInput
-                className="bg-pekon-card border border-pekon-border rounded-xl p-3 text-white text-xs"
-                placeholder="Contoh: 1500"
-                placeholderTextColor="#84958A"
-                keyboardType="numeric"
-                value={estimatedKg}
-                onChangeText={setEstimatedKg}
-              />
-            </View>
-
-            <View>
-              <Text className="text-slate-300 text-xs font-semibold mb-1">Batas Minimal Harga Jual (Rp/Kg)</Text>
-              <TextInput
-                className="bg-pekon-card border border-pekon-border rounded-xl p-3 text-white text-xs"
-                placeholder="Contoh: 2500"
-                placeholderTextColor="#84958A"
-                keyboardType="numeric"
-                value={minPricePerKg}
-                onChangeText={setMinPricePerKg}
-              />
-            </View>
-          </View>
-
-          <View className="flex-row gap-3 pt-2">
-            <TouchableOpacity
-              className="flex-1 bg-pekon-card border border-pekon-border py-3 rounded-xl items-center"
-              onPress={onClose}
-            >
-              <Text className="text-pekon-muted font-bold text-xs">Batal</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="flex-1 bg-pekon-primary py-3 rounded-xl items-center flex-row justify-center"
-              onPress={handleSubmit}
-              disabled={submitting}
-            >
-              {submitting ? (
-                <ActivityIndicator size="small" color="#0F1416" />
-              ) : (
-                <Text className="text-pekon-bg font-bold text-xs">Posting ke Bursa</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
+        <BottomSheet.Footer>
+          <Button
+            variant="primary"
+            size="lg"
+            loading={submitting}
+            onPress={handleSubmit}
+            className="w-full"
+          >
+            Tayangkan ke Bursa Panen Pekon
+          </Button>
+        </BottomSheet.Footer>
+      </BottomSheet.Content>
+    </BottomSheet>
   );
 };

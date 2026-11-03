@@ -1,0 +1,270 @@
+{
+  "version": 2,
+  "files": {
+    "components/ui/panel-ui-provider.tsx": {
+      "item": "panel-ui-provider",
+      "digest": "sha256:ae456771b4c9c32527c1e63642d888995e1f2577f6674ed58519d7d1b3e01683"
+    },
+    "lib/cn.ts": {
+      "item": "cn",
+      "digest": "sha256:9304a861c8673bee09e0f12de31773abbde503b02e59dfd74763ddec2e37cf05"
+    },
+    "components/ui/portal.tsx": {
+      "item": "portal",
+      "digest": "sha256:7d451285b4f8904d4ff6512cc81767338e000c8622d53b8c06793705cda69399"
+    },
+    "components/ui/focus-restoration-store.ts": {
+      "item": "focus-restoration-store",
+      "digest": "sha256:cd47b2ec6b440f1073e831912037677aaca12330f33a8aea335d67a46980a7a9"
+    },
+    "components/ui/modal-isolation-store.ts": {
+      "item": "modal-isolation-store",
+      "digest": "sha256:346301f0da15175f23a8918834d0c6e9bbdb096e3c130fa92bc9640dc3500c70"
+    },
+    "components/ui/portal-store.ts": {
+      "item": "portal-store",
+      "digest": "sha256:2b5d2ec9b313dc6cea151888b2a97d3de288bfd10863950ea3f93f218af8eeb8"
+    },
+    "components/ui/toast.tsx": {
+      "item": "toast",
+      "digest": "sha256:3241f892b48bc89eb15a89670e3c017a4a00b99130b2611264b6d4e2d866da33"
+    },
+    "components/ui/toast-store.ts": {
+      "item": "toast",
+      "digest": "sha256:3a74ab7c74e9aae50664bd5e7fd1204b267b45e20a1e89821911ceee4fc3d63f"
+    },
+    "components/ui/button.tsx": {
+      "item": "button",
+      "digest": "sha256:f09411324e31ecdb22f2ad03f2b348d6ff5a975f5dc915efdfdbfa54827621c4"
+    },
+    "components/ui/animated-pressable.tsx": {
+      "item": "animated-pressable",
+      "digest": "sha256:fdb7f6129ba6f30e67ad82e4415e98d9d041843ea13a0d034e133cf425fc9f98"
+    },
+    "components/ui/refs.ts": {
+      "item": "refs",
+      "digest": "sha256:a0133f298e05bdb5632304b3916f9970da4cda80dc9c932223b171fc83b73166"
+    },
+    "components/ui/icons.tsx": {
+      "item": "icons",
+      "digest": "sha256:3703b23dd96e035593a7c25fbe2abd58367761506708e2ae38ae262b4aef75dc"
+    },
+    "hooks/use-direction.ts": {
+      "item": "use-direction",
+      "digest": "sha256:9202d8550abaed8720af42d0320acf51e227fbf23f649b5636fd26475b849867"
+    },
+    "lib/native.ts": {
+      "item": "native",
+      "digest": "sha256:d2c74e54b8376bae665119a516b67a5f9570a58b6a1ea1b5e71af06993be34d0"
+    },
+    "lib/native-host.tsx": {
+      "item": "native",
+      "digest": "sha256:c03292c099c4cf992798e6cde2b0628731f8e6f30f88a992b8f2b3c8e47a210e"
+    },
+    "hooks/use-theme.ts": {
+      "item": "use-theme",
+      "digest": "sha256:1e0fe0e82d80fbb51c93bf6735d2676cf5f125a7f8f1210756e0aec5e8ec743f"
+    },
+    "components/ui/spinner.tsx": {
+      "item": "spinner",
+      "digest": "sha256:0cabd59ba126afb9f4721001e55e8fa87ab5f1f93e0062b83a1ae490b3c0aa4f"
+    },
+    "components/ui/text.tsx": {
+      "item": "text",
+      "digest": "sha256:4d50bd5d2be83b8d420489ef12a9dbbdd20f6037261d5dcfb3538e956b85dad1"
+    },
+    "components/ui/bottom-sheet.tsx": {
+      "item": "bottom-sheet",
+      "digest": "sha256:2d0b3cbfae8d701d7c419c254c64f17f5b3d035a43f0590bfeb61dd7227a3a8e"
+    },
+    "lib/haptics.ts": {
+      "item": "haptics",
+      "digest": "sha256:aad3c62bb6b9039ef5db86da4f161e415f3f459e25b192a192ae325997733e41"
+    },
+    "components/ui/scrim.tsx": {
+      "item": "scrim",
+      "digest": "sha256:b8a5f68918ced359b54fa8897f752c6f18ad6a9f2e8e445c572d19f518986fb2"
+    },
+    "hooks/use-back-handler.ts": {
+      "item": "use-back-handler",
+      "digest": "sha256:7c45197c64beb13d8ab1f386758e07e2d83bdb6d02e5d83e27153afbdfa686e1"
+    },
+    "components/ui/card.tsx": {
+      "item": "card",
+      "digest": "sha256:87ed7911892e7ef19916250cec1363e34bc1cbe50486d5f80e3ec7039016ec71"
+    },
+    "components/ui/input.tsx": {
+      "item": "input",
+      "digest": "sha256:ad359ce6bda06d846a994c86cbc0ce85fbde5bf84711a94baebe51262ab13569"
+    },
+    "components/ui/input-content-padding.ts": {
+      "item": "input",
+      "digest": "sha256:3b948993b1bd50d9dfe012ce17aaa3a062fee261ce04b183a27a7bbdf5d985cf"
+    },
+    "components/ui/keyboard-avoider.tsx": {
+      "item": "keyboard-avoider",
+      "digest": "sha256:cb4d5ced10468236a3d8a3b0fe991a701a55d89e26c9ebd3dfa4dff5618c52f8"
+    },
+    "hooks/use-keyboard-avoidance.ts": {
+      "item": "use-keyboard-avoidance",
+      "digest": "sha256:340a632d2f3584475263bd849359b54d731b14abec6141a54a76d642640a1bcf"
+    },
+    "components/ui/label.tsx": {
+      "item": "label",
+      "digest": "sha256:6ed0bb4e874d757f16657770bc6081f42a53753fc56120a0e564a0df2a59299e"
+    },
+    "components/ui/badge.tsx": {
+      "item": "badge",
+      "digest": "sha256:eab38dc9e65d2d1ef180fda3d5842cee61eccdb5c4ca3795d148381390590a68"
+    },
+    "components/ui/dialog.tsx": {
+      "item": "dialog",
+      "digest": "sha256:b2b938e8ce3437edf54dba8980d7856c57afce485b68a3af754446a51532bf1f"
+    },
+    "components/ui/otp-input.tsx": {
+      "item": "otp-input",
+      "digest": "sha256:c42b141dd764bf7ffcbc5989f77b5b52e365d4e22e2e4e3741d58b9d0335a175"
+    },
+    "components/ui/otp-input-state.ts": {
+      "item": "otp-input",
+      "digest": "sha256:39dde8f165926f051dcd638f3ee2dac325c57df58be6466510de6967291d3f11"
+    },
+    "components/ui/item.tsx": {
+      "item": "item",
+      "digest": "sha256:cd72500909d9025b004003e3ca574867743f6e7a27b4857d8b2a704e43e70cc2"
+    },
+    "components/ui/switch.tsx": {
+      "item": "switch",
+      "digest": "sha256:4db40b32be4c8e0f8b244fe1d7b1882311c0de8a1bfbd1a78f97ab8b9bf39dc9"
+    },
+    "components/ui/field.tsx": {
+      "item": "field",
+      "digest": "sha256:11e7ce4ad97243f2e6732f3cf499103830d08d2a33b727b321e55f0ae325dd6a"
+    },
+    "components/ui/separator.tsx": {
+      "item": "separator",
+      "digest": "sha256:888199cca181e7abeb05fd06621ae5c09c593632ea47290fca1737c61881a728"
+    }
+  },
+  "roots": {
+    "panel-ui-provider": [
+      "panel-ui-provider",
+      "cn",
+      "portal",
+      "focus-restoration-store",
+      "modal-isolation-store",
+      "portal-store",
+      "toast",
+      "button",
+      "animated-pressable",
+      "refs",
+      "icons",
+      "use-direction",
+      "native",
+      "use-theme",
+      "spinner",
+      "text"
+    ],
+    "bottom-sheet": [
+      "bottom-sheet",
+      "cn",
+      "haptics",
+      "icons",
+      "use-direction",
+      "native",
+      "use-theme",
+      "portal",
+      "focus-restoration-store",
+      "modal-isolation-store",
+      "portal-store",
+      "scrim",
+      "text",
+      "refs",
+      "use-back-handler"
+    ],
+    "button": [
+      "button",
+      "animated-pressable",
+      "refs",
+      "cn",
+      "icons",
+      "use-direction",
+      "native",
+      "use-theme",
+      "spinner",
+      "text"
+    ],
+    "card": [
+      "card",
+      "cn",
+      "refs",
+      "text",
+      "use-direction"
+    ],
+    "input": [
+      "input",
+      "icons",
+      "use-direction",
+      "keyboard-avoider",
+      "text",
+      "refs",
+      "use-keyboard-avoidance",
+      "label"
+    ],
+    "badge": [
+      "badge",
+      "refs",
+      "text",
+      "use-direction"
+    ],
+    "dialog": [
+      "dialog",
+      "cn",
+      "portal",
+      "focus-restoration-store",
+      "modal-isolation-store",
+      "portal-store",
+      "refs",
+      "scrim",
+      "text",
+      "use-direction",
+      "use-back-handler"
+    ],
+    "otp-input": [
+      "otp-input",
+      "refs",
+      "text",
+      "use-direction"
+    ],
+    "item": [
+      "item",
+      "animated-pressable",
+      "refs",
+      "cn",
+      "text",
+      "use-direction"
+    ],
+    "switch": [
+      "switch",
+      "field",
+      "label",
+      "refs",
+      "text",
+      "use-direction",
+      "separator",
+      "cn",
+      "haptics",
+      "native",
+      "use-theme"
+    ],
+    "separator": [
+      "separator",
+      "cn",
+      "refs",
+      "text",
+      "use-direction"
+    ]
+  },
+  "legacyFiles": [],
+  "registry": "https://panelui.dev/r"
+}

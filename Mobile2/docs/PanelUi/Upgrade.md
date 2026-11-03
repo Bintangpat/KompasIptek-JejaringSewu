@@ -1,0 +1,120 @@
+---
+title: Upgrading
+description: Upgrade PanelUI deliberately — current package versions, copied-source updates and the migrations that require code changes.
+---
+
+An upgrade has two parts: taking the new files, then changing any code whose contract moved. This
+page is the short index for the second part. The [changelog](https://github.com/panel-ui/PanelUI/blob/main/CHANGELOG.md)
+remains the complete release record; the entries here only point out releases that ask you to edit
+an existing app.
+
+## Current packages
+
+| Package              | Current | Release                                                         | Source                                                                                                 |
+| -------------------- | ------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `panelui-native`     | `1.0.0` | [npm](https://www.npmjs.com/package/panelui-native/v/1.0.0)     | [package.json](https://github.com/panel-ui/PanelUI/blob/main/packages/panelui/package.json)            |
+| `panelui-cli`        | `0.8.0` | [npm](https://www.npmjs.com/package/panelui-cli/v/0.8.0)        | [package.json](https://github.com/panel-ui/PanelUI/blob/main/packages/cli/package.json)                |
+| `create-panelui-app` | `0.2.2` | [npm](https://www.npmjs.com/package/create-panelui-app/v/0.2.2) | [package.json](https://github.com/panel-ui/PanelUI/blob/main/packages/create-panelui-app/package.json) |
+
+These are checked against the package manifests. A release that changes one without updating this
+page fails the docs tests rather than leaving an old “current” version here.
+
+## Upgrade workflow
+
+1. Read every migration entry between the version you have and the version you want. The index
+   below is oldest first so the edits can be applied in release order.
+2. If you import the package, update it normally:
+
+   ```bash
+   npm install panelui-native@latest
+   npx expo install --check
+   ```
+
+3. If the CLI copied source into your app, those files are yours. Preview the registry version
+   first, then overwrite only after preserving local edits:
+
+   ```bash
+   npx panelui-cli@latest add button --dry-run
+   npx panelui-cli@latest add button --overwrite
+   ```
+
+4. Restart Metro after changing `extraThemes`, Metro configuration or the CSS entry, then run the
+   app and its typecheck. A reload does not make Metro reread its configuration.
+
+## Migration index
+
+### v0.44.0 — remove Card.Wash
+
+`Card.Wash` and `CardWashProps` were removed. Replace the wash with a decorative first child
+inside a clipping card, and install only the native dependency that decorative layer actually
+uses.
+
+[Release](https://github.com/panel-ui/PanelUI/releases/tag/v0.44.0) ·
+[Source notes](https://github.com/panel-ui/PanelUI/blob/main/CHANGELOG.md#migration-0-44-0)
+
+### v0.46.0 — rename KpiChart to Kpi
+
+Rename `KpiChart` and its `KpiChart*Props` types to `Kpi` and `Kpi*Props`. Copied-source projects
+must also replace the registry item: `add kpi-chart` no longer resolves, so install `kpi`.
+
+[Release](https://github.com/panel-ui/PanelUI/releases/tag/v0.46.0) ·
+[Source notes](https://github.com/panel-ui/PanelUI/blob/main/CHANGELOG.md#migration-0-46-0)
+
+### v0.59.0 — update FunnelChart geometry props
+
+Rename `stageHeight` to optional `stageSize` and `crossSize` to `height`. Remove `align`,
+`cornerRadius` and `orientation`; the chart is now a horizontal ribbon. `layers`, `edges` and
+`staggerDelay` control the replacement presentation.
+
+[Release](https://github.com/panel-ui/PanelUI/releases/tag/v0.59.0) ·
+[Source notes](https://github.com/panel-ui/PanelUI/blob/main/CHANGELOG.md#migration-0-59-0)
+
+### v0.60.0 — size swipeable Tabs and place Fab.Group at the screen root
+
+Give swipeable `Tabs` a layout height, such as `className="flex-1"`. Treat
+`keepMounted="measured"` as `true`. Place `Fab.Group` in the screen root because that parent owns
+its offset and scrim bounds.
+
+[Release](https://github.com/panel-ui/PanelUI/releases/tag/v0.60.0) ·
+[Source notes](https://github.com/panel-ui/PanelUI/blob/main/CHANGELOG.md#migration-0-60-0)
+
+### v0.78.0 — keep the old SplitView drawing with `variant="seam"`
+
+Nothing breaks and no code has to change, but **every existing `SplitView` looks different**: each
+pane now has a rounded surface of its own on a recessed ground, with the grip in a gap between
+them. It used to be a hairline grip on a shared background, which was indistinguishable from
+`Splitter`.
+
+Pass `variant="seam"` to keep the old drawing. It is the right choice inside something that
+already has a surface — a card, a sheet — where a second pair of them is a box in a box.
+
+The example demos also dropped the border and per-pane tint they used to tell the halves apart,
+since the panes now carry both. Your own wrapper may want the same trim.
+
+[Release](https://github.com/panel-ui/PanelUI/releases/tag/v0.78.0) ·
+[Source notes](https://github.com/panel-ui/PanelUI/blob/main/CHANGELOG.md#migration-0-78-0)
+
+### v0.79.0 — a Marquee is taller, and every ProgressButton variant shares a surface
+
+Nothing breaks and no code has to change, but two things look different.
+
+**Every `Marquee` gains height.** Its pause control used to float in a corner of the track and is
+drawn below the content now, in flow — the way a `Marquee.Group`'s always was. Floating, a 48pt
+target on a strip of badges half that tall was clipped by the track's own edge and sat on the
+content it exists to let you read. A marquee is therefore as tall as its content plus its control,
+and a container given a fixed height spends part of that height on it: a vertical one at `h-40`
+has about sixty points less track than it did.
+
+Pass `showPauseControl={false}` where an equivalent visible control already exists elsewhere, and
+the old height comes back with it.
+
+**Every `ProgressButton` variant rests on the same surface.** `primary`, `destructive` and
+`success` were outlines and are now solid secondary grounds carrying the variant's colour in the
+label. Nothing to change — the fill is unaffected — but a screen of them looks quieter than it did.
+
+[Release](https://github.com/panel-ui/PanelUI/releases/tag/v0.79.0) ·
+[Source notes](https://github.com/panel-ui/PanelUI/blob/main/CHANGELOG.md#migration-0-79-0)
+
+For everything else — additions, fixes and changes that require no migration — continue in the
+[full changelog](https://github.com/panel-ui/PanelUI/blob/main/CHANGELOG.md) or browse
+[all releases](https://github.com/panel-ui/PanelUI/releases).

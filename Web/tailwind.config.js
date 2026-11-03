@@ -10,8 +10,28 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Inter", "Geist", "system-ui", "-apple-system", "sans-serif"],
-        mono: ["'JetBrains Mono'", "monospace"],
+        sans: [
+          "var(--font-geist-sans)",
+          "Geist",
+          "Inter",
+          "system-ui",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "'Segoe UI'",
+          "Roboto",
+          "sans-serif",
+        ],
+        mono: [
+          "var(--font-geist-mono)",
+          "Geist Mono",
+          "'JetBrains Mono'",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Monaco",
+          "Consolas",
+          "monospace",
+        ],
       },
       colors: {
         border: "var(--border)",
@@ -93,6 +113,20 @@ module.exports = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+      },
+      keyframes: {
+        marquee: {
+          "0%": { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-100%)" },
+        },
+        "marquee-reverse": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(0%)" },
+        },
+      },
+      animation: {
+        marquee: "marquee 32s linear infinite",
+        "marquee-reverse": "marquee-reverse 32s linear infinite",
       },
     },
   },

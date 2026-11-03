@@ -1,6 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Image } from 'react-native';
 import { Send, RefreshCw } from 'lucide-react-native';
+
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
 
 interface PoWPhotoData {
   uri: string;
@@ -32,67 +37,61 @@ export const PoWReviewView: React.FC<PoWReviewViewProps> = ({
     <View className="flex-1 p-4 justify-between">
       <View>
         <View className="flex-row items-center justify-between mb-2">
-          <Text className="text-white font-bold text-base">Pratinjau Bukti Kerja (PoW)</Text>
-          <View className="bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/40">
-            <Text className="text-emerald-400 text-[10px] font-bold">KAMERA LANGSUNG</Text>
-          </View>
+          <Text className="text-foreground font-bold text-base">Pratinjau Bukti Kerja (PoW)</Text>
+          <Badge variant="success" size="xs">
+            KAMERA LANGSUNG
+          </Badge>
         </View>
 
         {/* Gambar Ber-Watermark */}
-        <View className="rounded-2xl overflow-hidden border border-pekon-border relative bg-pekon-card">
-          <Image source={{ uri: capturedPhoto.uri }} className="w-full h-84" resizeMode="cover" />
+        <View className="rounded-2xl overflow-hidden border border-border relative bg-card">
+          <Image source={{ uri: capturedPhoto.uri }} className="w-full h-80" resizeMode="cover" />
 
           {/* Overlay Watermark Permanen */}
           <View className="absolute bottom-0 left-0 right-0 bg-black/80 p-3">
-            <Text className="text-emerald-400 font-bold text-xs">TERTANDATANGANI SECARA KRIPTOGRAFIS</Text>
+            <Text className="text-primary font-bold text-xs">TERTANDATANGANI SECARA KRIPTOGRAFIS</Text>
             <Text className="text-white text-xs font-mono mt-0.5">
               SHA-256: {capturedPhoto.hash.substring(0, 24)}...
             </Text>
-            <Text className="text-pekon-muted text-[11px] mt-0.5">
+            <Text className="text-slate-300 text-[11px] mt-0.5">
               GPS: {capturedPhoto.gpsLat.toFixed(5)}, {capturedPhoto.gpsLng.toFixed(5)} (±{capturedPhoto.accuracy.toFixed(0)}m) • {capturedPhoto.timestamp} WIB
             </Text>
           </View>
         </View>
 
         {/* Info Transaksi Terkait */}
-        <View className="mt-3 p-3 bg-pekon-card border border-pekon-border rounded-xl">
-          <Text className="text-pekon-subtle text-[11px]">Transaksi yang Dibuktikan:</Text>
-          <Text className="text-white font-bold text-xs mt-0.5">
+        <Card className="mt-3 p-3 bg-card border-border">
+          <Text className="text-muted-foreground text-[11px]">Transaksi yang Dibuktikan:</Text>
+          <Text className="text-foreground font-bold text-xs mt-0.5">
             {selectedTx
               ? `${getTxTypeLabel(selectedTx.type)} • Total: Rp ${Number(selectedTx.grossAmount).toLocaleString('id-ID')}`
               : 'Mode Uji Coba Mandiri (Tanpa Transaksi Database)'}
           </Text>
-        </View>
+        </Card>
       </View>
 
       {/* Tombol Eksekusi Kirim / Ambil Ulang */}
       <View className="gap-2.5 pb-2">
-        <TouchableOpacity
-          className="bg-pekon-primary py-3.5 rounded-xl flex-row items-center justify-center"
+        <Button
+          variant="primary"
+          size="lg"
+          loading={submitting}
           onPress={onSubmit}
-          disabled={submitting}
-          accessible={true}
-          accessibilityLabel="Kirim dan verifikasi bukti kerja ke server pekon"
+          className="w-full flex-row items-center justify-center"
         >
-          {submitting ? (
-            <ActivityIndicator color="#0F1416" />
-          ) : (
-            <>
-              <Send size={16} color="#0F1416" />
-              <Text className="text-pekon-bg font-bold text-sm ml-2">Kirim & Verifikasi Transaksi</Text>
-            </>
-          )}
-        </TouchableOpacity>
+          <Send size={16} color="#FFFFFF" />
+          <Text className="text-primary-foreground font-bold text-sm ml-2">Kirim & Verifikasi Transaksi</Text>
+        </Button>
 
-        <TouchableOpacity
-          className="bg-pekon-surface border border-pekon-border py-3 rounded-xl flex-row items-center justify-center"
+        <Button
+          variant="outline"
+          size="md"
           onPress={onRetake}
-          accessible={true}
-          accessibilityLabel="Ambil ulang foto bukti kerja"
+          className="w-full flex-row items-center justify-center"
         >
-          <RefreshCw size={15} color="#84958A" />
-          <Text className="text-pekon-text font-semibold text-xs ml-2">Ambil Ulang Foto</Text>
-        </TouchableOpacity>
+          <RefreshCw size={14} color="#84958A" />
+          <Text className="text-foreground font-semibold text-xs ml-2">Ambil Ulang Foto</Text>
+        </Button>
       </View>
     </View>
   );

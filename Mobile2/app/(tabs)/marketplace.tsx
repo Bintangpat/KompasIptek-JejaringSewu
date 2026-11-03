@@ -1,14 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  ActivityIndicator,
   Alert,
 } from 'react-native';
 import { Sprout, Briefcase, HeartHandshake, Plus } from 'lucide-react-native';
+
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
+import { AuthWallSheet } from '@/components/ui/auth-wall-sheet';
+import { useAuthProtection } from '@/hooks/use-auth-protection';
 
 import { harvestApi } from '@/features/harvest/api';
 import {
@@ -25,6 +31,13 @@ import {
 } from '@/features/mini-job/components';
 
 export default function MarketplaceScreen() {
+  const {
+    isAuthWallOpen,
+    setIsAuthWallOpen,
+    authWallProps,
+    protectedAction,
+  } = useAuthProtection();
+
   const [activeTab, setActiveTab] = useState<'PANEN' | 'MINI_JOB'>('MINI_JOB');
   const [miniJobFilter, setMiniJobFilter] = useState<'ALL' | 'DISABILITY' | 'OPEN'>('OPEN');
 
@@ -70,25 +83,30 @@ export default function MarketplaceScreen() {
 
   // 1. Klaim Mini-Job
   const handleClaimJob = async (jobId: string, title: string) => {
-    Alert.alert(
-      'Kunci Tugas (Auto-Accept)',
-      `Anda akan mengunci pekerjaan "${title}". Sistem melindungi hak kerja Anda tanpa seleksi fisik sepihak (Zero-Discrimination). Lanjutkan?`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Ambil & Kunci Tugas',
-          onPress: async () => {
-            try {
-              await miniJobApi.claimJob(jobId);
-              Alert.alert('Sukses Terkunci!', 'Pekerjaan berhasil Anda kunci. Selesaikan tugas dan unggah bukti di tab Selfie PoW.');
-              fetchData();
-            } catch (err: any) {
-              Alert.alert('Gagal Mengunci', err.message || 'Terjadi kesalahan sistem.');
-            }
+    protectedAction(() => {
+      Alert.alert(
+        'Kunci Tugas (Auto-Accept)',
+        `Anda akan mengunci pekerjaan "${title}". Sistem melindungi hak kerja Anda tanpa seleksi fisik sepihak (Zero-Discrimination). Lanjutkan?`,
+        [
+          { text: 'Batal', style: 'cancel' },
+          {
+            text: 'Ambil & Kunci Tugas',
+            onPress: async () => {
+              try {
+                await miniJobApi.claimJob(jobId);
+                Alert.alert('Sukses Terkunci!', 'Pekerjaan berhasil Anda kunci. Selesaikan tugas dan unggah bukti di tab Selfie PoW.');
+                fetchData();
+              } catch (err: any) {
+                Alert.alert('Gagal Mengunci', err.message || 'Terjadi kesalahan sistem.');
+              }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }, {
+      title: 'Ambil & Kunci Pekerjaan',
+      description: 'Masuk dengan akun warga untuk mengunci tugas, melindungi hak kerja, dan menerima upah tunai secara adil.',
+    });
   };
 
   // 2. Buat Lelang Panen Baru (Petani)
@@ -151,25 +169,30 @@ export default function MarketplaceScreen() {
 
   // 4. Petani Menyetujui Tawaran Pengepul
   const handleAcceptBid = (bidId: string, commodityName: string, offeredPrice: number) => {
-    Alert.alert(
-      'Kunci Transaksi Panen',
-      `Setujui penawaran harga Rp ${Number(offeredPrice).toLocaleString('id-ID')}/kg untuk komoditas ${commodityName}? Lelang akan otomatis dikunci dan transaksi diterbitkan.`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Setujui & Kunci',
-          onPress: async () => {
-            try {
-              await harvestApi.acceptBid(bidId);
-              Alert.alert('Lelang Berhasil Dikunci!', 'Transaksi panen telah diterbitkan. Lakukan serah terima dan selesaikan bukti di tab Selfie PoW.');
-              fetchData();
-            } catch (err: any) {
-              Alert.alert('Gagal Menyetujui Tawaran', err.message || 'Terjadi kesalahan sistem.');
-            }
+    protectedAction(() => {
+      Alert.alert(
+        'Kunci Transaksi Panen',
+        `Setujui penawaran harga Rp ${Number(offeredPrice).toLocaleString('id-ID')}/kg untuk komoditas ${commodityName}? Lelang akan otomatis dikunci dan transaksi diterbitkan.`,
+        [
+          { text: 'Batal', style: 'cancel' },
+          {
+            text: 'Setujui & Kunci',
+            onPress: async () => {
+              try {
+                await harvestApi.acceptBid(bidId);
+                Alert.alert('Lelang Berhasil Dikunci!', 'Transaksi panen telah diterbitkan. Lakukan serah terima dan selesaikan bukti di tab Selfie PoW.');
+                fetchData();
+              } catch (err: any) {
+                Alert.alert('Gagal Menyetujui Tawaran', err.message || 'Terjadi kesalahan sistem.');
+              }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }, {
+      title: 'Setujui Penawaran Panen',
+      description: 'Masuk dengan akun petani pemilik lelang untuk menyetujui transaksi hasil panen pekon.',
+    });
   };
 
   // 5. Buat Lowongan Mini-Job Baru (UMKM)
@@ -202,21 +225,19 @@ export default function MarketplaceScreen() {
   };
 
   return (
-    <View className="flex-1 bg-pekon-bg">
+    <View className="flex-1 bg-background">
       {/* Tab Switcher Utama */}
-      <View className="flex-row bg-pekon-surface p-2 border-b border-pekon-border">
+      <View className="flex-row bg-card p-2 border-b border-border">
         <TouchableOpacity
           className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg ${
-            activeTab === 'MINI_JOB' ? 'bg-pekon-card border border-pekon-primary' : ''
+            activeTab === 'MINI_JOB' ? 'bg-primary/10 border border-primary' : ''
           }`}
           onPress={() => setActiveTab('MINI_JOB')}
-          accessible={true}
-          accessibilityLabel="Buka Tab Bursa Mini Job"
         >
-          <Briefcase size={16} color={activeTab === 'MINI_JOB' ? '#00F2A9' : '#84958A'} />
+          <Briefcase size={16} color={activeTab === 'MINI_JOB' ? '#10B981' : '#84958A'} />
           <Text
             className={`text-xs font-bold ml-1.5 ${
-              activeTab === 'MINI_JOB' ? 'text-pekon-primary' : 'text-pekon-muted'
+              activeTab === 'MINI_JOB' ? 'text-primary' : 'text-muted-foreground'
             }`}
           >
             Bursa Mini-Job
@@ -225,16 +246,14 @@ export default function MarketplaceScreen() {
 
         <TouchableOpacity
           className={`flex-1 flex-row items-center justify-center py-2.5 rounded-lg ${
-            activeTab === 'PANEN' ? 'bg-pekon-card border border-pekon-primary' : ''
+            activeTab === 'PANEN' ? 'bg-primary/10 border border-primary' : ''
           }`}
           onPress={() => setActiveTab('PANEN')}
-          accessible={true}
-          accessibilityLabel="Buka Tab Hasil Bumi Petani"
         >
-          <Sprout size={16} color={activeTab === 'PANEN' ? '#00F2A9' : '#84958A'} />
+          <Sprout size={16} color={activeTab === 'PANEN' ? '#10B981' : '#84958A'} />
           <Text
             className={`text-xs font-bold ml-1.5 ${
-              activeTab === 'PANEN' ? 'text-pekon-primary' : 'text-pekon-muted'
+              activeTab === 'PANEN' ? 'text-primary' : 'text-muted-foreground'
             }`}
           >
             Hasil Bumi Petani
@@ -247,23 +266,33 @@ export default function MarketplaceScreen() {
         <MiniJobFilterBar
           currentFilter={miniJobFilter}
           onFilterChange={setMiniJobFilter}
-          onPostJobPress={() => setShowCreateJobModal(true)}
+          onPostJobPress={() => {
+            protectedAction(() => setShowCreateJobModal(true), {
+              title: 'Pasang Lowongan Tugas Mikro',
+              description: 'Masuk dengan akun warga / pelaku usaha untuk mempublikasikan tugas mikro dengan upah adil.',
+            });
+          }}
         />
       ) : (
-        <View className="bg-pekon-surface/70 px-4 py-2.5 border-b border-pekon-border/60 flex-row items-center justify-between">
+        <View className="bg-card px-4 py-2.5 border-b border-border flex-row items-center justify-between">
           <View className="flex-1 mr-2">
-            <Text className="text-white text-xs font-bold">Katalog Panen Terbuka</Text>
-            <Text className="text-pekon-subtle text-[11px]">Harga wajar langsung dari petani desa</Text>
+            <Text className="text-foreground text-xs font-bold">Katalog Panen Terbuka</Text>
+            <Text className="text-muted-foreground text-[11px]">Harga wajar langsung dari petani desa</Text>
           </View>
-          <TouchableOpacity
-            className="bg-pekon-primary px-3 py-1.5 rounded-lg flex-row items-center"
-            onPress={() => setShowCreateHarvestModal(true)}
-            accessible={true}
-            accessibilityLabel="Buka formulir posting hasil bumi petani"
+          <Button
+            variant="primary"
+            size="sm"
+            onPress={() => {
+              protectedAction(() => setShowCreateHarvestModal(true), {
+                title: 'Posting Hasil Panen Baru',
+                description: 'Masuk dengan akun petani pekon untuk membuka lelang hasil panen ke jaringan pengepul jujur.',
+              });
+            }}
+            className="flex-row items-center"
           >
-            <Plus size={14} color="#0F1416" />
-            <Text className="text-pekon-bg text-xs font-bold ml-1">Pasang Panen</Text>
-          </TouchableOpacity>
+            <Plus size={14} color="#FFFFFF" />
+            <Text className="text-primary-foreground text-xs font-bold ml-1">Pasang Panen</Text>
+          </Button>
         </View>
       )}
 
@@ -277,34 +306,43 @@ export default function MarketplaceScreen() {
               setRefreshing(true);
               fetchData();
             }}
-            tintColor="#00F2A9"
+            tintColor="#10B981"
           />
         }
       >
         {loading ? (
-          <ActivityIndicator size="large" color="#00F2A9" className="my-8" />
+          <View className="my-8 items-center">
+            <Spinner size="lg" />
+          </View>
         ) : activeTab === 'MINI_JOB' ? (
           <View>
-            <View className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3 mb-4 flex-row items-center">
+            <Card className="bg-primary/10 border-primary/20 p-3 mb-4 flex-row items-center">
               <HeartHandshake size={20} color="#10B981" />
-              <View className="ml-2 flex-1">
-                <Text className="text-emerald-400 font-bold text-xs">Prinsip Zero-Discrimination</Text>
-                <Text className="text-emerald-200/80 text-[11px]">
-                  Tugas bertanda ramah disabilitas terkunci otomatis tanpa tombol tolak dari pemberi kerja.
+              <View className="ml-2.5 flex-1">
+                <Text className="text-primary font-bold text-xs">Prinsip Zero-Discrimination</Text>
+                <Text className="text-foreground text-[11px] leading-relaxed">
+                  Tugas bertanda ramah disabilitas terkunci otomatis tanpa seleksi fisik sepihak dari pemberi kerja.
                 </Text>
               </View>
-            </View>
+            </Card>
 
             {jobs.length === 0 ? (
-              <View className="bg-pekon-card border border-pekon-border rounded-xl p-6 items-center">
-                <Text className="text-pekon-text text-sm">Belum ada lowongan mini-job pada kategori ini.</Text>
-                <TouchableOpacity
-                  className="mt-3 bg-pekon-surface border border-pekon-border px-3 py-1.5 rounded-lg"
-                  onPress={() => setShowCreateJobModal(true)}
+              <Card className="bg-card border-border p-6 items-center">
+                <Text className="text-foreground text-sm">Belum ada lowongan mini-job pada kategori ini.</Text>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  onPress={() => {
+                    protectedAction(() => setShowCreateJobModal(true), {
+                      title: 'Pasang Lowongan Tugas Mikro',
+                      description: 'Masuk dengan akun warga / UMKM desa untuk membuka lowongan tugas baru.',
+                    });
+                  }}
                 >
-                  <Text className="text-pekon-primary text-xs font-semibold">+ Buka Lowongan Sekarang</Text>
-                </TouchableOpacity>
-              </View>
+                  + Buka Lowongan Sekarang
+                </Button>
+              </Card>
             ) : (
               jobs.map((job) => (
                 <MiniJobCard
@@ -318,23 +356,35 @@ export default function MarketplaceScreen() {
         ) : (
           <View>
             {harvests.length === 0 ? (
-              <View className="bg-pekon-card border border-pekon-border rounded-xl p-6 items-center">
-                <Text className="text-pekon-text text-sm">Belum ada komoditas hasil bumi yang diposting.</Text>
-                <TouchableOpacity
-                  className="mt-3 bg-pekon-primary px-4 py-2 rounded-lg"
-                  onPress={() => setShowCreateHarvestModal(true)}
+              <Card className="bg-card border-border p-6 items-center">
+                <Text className="text-foreground text-sm">Belum ada komoditas hasil bumi yang diposting.</Text>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="mt-3"
+                  onPress={() => {
+                    protectedAction(() => setShowCreateHarvestModal(true), {
+                      title: 'Posting Hasil Panen Baru',
+                      description: 'Masuk dengan akun petani pekon untuk membuka lelang komoditas bumi.',
+                    });
+                  }}
                 >
-                  <Text className="text-pekon-bg text-xs font-bold">+ Posting Panen Baru</Text>
-                </TouchableOpacity>
-              </View>
+                  + Posting Panen Baru
+                </Button>
+              </Card>
             ) : (
               harvests.map((h) => (
                 <HarvestListingCard
                   key={h.id}
                   listing={h}
                   onPlaceBidPress={(item) => {
-                    setSelectedHarvestForBid(item);
-                    setShowBidModal(true);
+                    protectedAction(() => {
+                      setSelectedHarvestForBid(item);
+                      setShowBidModal(true);
+                    }, {
+                      title: 'Ajukan Penawaran Harga',
+                      description: 'Masuk dengan akun pengepul pekon untuk mengajukan tawaran harga beli panen.',
+                    });
                   }}
                   onAcceptBid={handleAcceptBid}
                 />
@@ -368,6 +418,12 @@ export default function MarketplaceScreen() {
         onClose={() => setShowCreateJobModal(false)}
         onSubmit={handleCreateJob}
         submitting={submitting}
+      />
+
+      <AuthWallSheet
+        open={isAuthWallOpen}
+        onOpenChange={setIsAuthWallOpen}
+        {...authWallProps}
       />
     </View>
   );

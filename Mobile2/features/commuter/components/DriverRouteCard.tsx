@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, Switch } from 'react-native';
+import { View } from 'react-native';
 import {
   ArrowRight,
   Radio,
@@ -9,6 +9,12 @@ import {
   Fuel,
   Phone,
 } from 'lucide-react-native';
+
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Text } from '@/components/ui/text';
 
 interface DriverRouteCardProps {
   route: any;
@@ -32,50 +38,51 @@ export const DriverRouteCard: React.FC<DriverRouteCardProps> = ({
   return (
     <View>
       {/* Status Card Rute Aktif */}
-      <View className="bg-pekon-card border border-pekon-primary/60 rounded-xl p-4 mb-3">
-        <View className="flex-row justify-between items-center pb-2 border-b border-pekon-border">
+      <Card className="bg-card border-primary/40 p-4 mb-3">
+        <View className="flex-row justify-between items-center pb-2.5 border-b border-border">
           <View className="flex-row items-center">
-            <View className="w-3 h-3 rounded-full bg-emerald-400 mr-2" />
-            <Text className="text-white font-bold text-sm">Rute Perjalanan Anda Aktif</Text>
+            <View className="w-2.5 h-2.5 rounded-full bg-primary mr-2" />
+            <Text className="text-foreground font-bold text-sm">Rute Perjalanan Anda Aktif</Text>
           </View>
-          <TouchableOpacity
+          <Button
+            variant="destructive"
+            size="xs"
             onPress={() => onFinishRoute(route.id)}
-            className="bg-red-500/10 border border-red-500/30 px-2.5 py-1 rounded-lg"
           >
-            <Text className="text-red-400 text-[10px] font-bold">Akhiri Rute</Text>
-          </TouchableOpacity>
+            Akhiri Rute
+          </Button>
         </View>
 
         {/* Geospatial Visualizer Route Line */}
-        <View className="my-3 bg-pekon-bg p-3.5 rounded-xl border border-pekon-border">
+        <View className="my-3 bg-muted/40 p-3.5 rounded-xl border border-border">
           <View className="flex-row items-center justify-between mb-3">
             <View className="items-start flex-1">
-              <Text className="text-pekon-muted text-[10px] font-semibold">ASAL (START)</Text>
-              <Text className="text-white font-bold text-xs mt-0.5">{route.originName}</Text>
+              <Text className="text-muted-foreground text-[10px] font-semibold">ASAL (START)</Text>
+              <Text className="text-foreground font-bold text-xs mt-0.5">{route.originName}</Text>
             </View>
             <View className="px-2">
-              <ArrowRight size={16} color="#00F2A9" />
+              <ArrowRight size={16} color="#10B981" />
             </View>
             <View className="items-end flex-1">
-              <Text className="text-pekon-muted text-[10px] font-semibold">TUJUAN (FINISH)</Text>
-              <Text className="text-white font-bold text-xs mt-0.5 text-right">{route.destinationName}</Text>
+              <Text className="text-muted-foreground text-[10px] font-semibold">TUJUAN (FINISH)</Text>
+              <Text className="text-foreground font-bold text-xs mt-0.5 text-right">{route.destinationName}</Text>
             </View>
           </View>
 
           {/* Progress Track */}
-          <View className="relative h-2 bg-pekon-surface rounded-full my-1 justify-center">
-            <View className="h-full bg-gradient-to-r from-pekon-primary to-emerald-400 rounded-full w-3/5" />
-            <View className="absolute left-[60%] w-4 h-4 bg-pekon-primary border-2 border-pekon-bg rounded-full -ml-2 items-center justify-center">
-              <View className="w-1.5 h-1.5 bg-pekon-bg rounded-full" />
+          <View className="relative h-2 bg-muted rounded-full my-1 justify-center">
+            <View className="h-full bg-primary rounded-full w-3/5" />
+            <View className="absolute left-[60%] w-4 h-4 bg-primary border-2 border-background rounded-full -ml-2 items-center justify-center">
+              <View className="w-1.5 h-1.5 bg-background rounded-full" />
             </View>
           </View>
 
-          <View className="flex-row justify-between items-center mt-2 pt-2 border-t border-pekon-border/50">
-            <Text className="text-pekon-subtle text-[10px]">
+          <View className="flex-row justify-between items-center mt-2 pt-2 border-t border-border/60">
+            <Text className="text-muted-foreground text-[10px]">
               Koordinat Terakhir: {route.currentLat ? `${Number(route.currentLat).toFixed(4)}, ${Number(route.currentLng).toFixed(4)}` : 'Sesuai Asal'}
             </Text>
             {lastPingTime && (
-              <Text className="text-pekon-primary text-[10px] font-medium">
+              <Text className="text-primary text-[10px] font-medium">
                 Ping {lastPingTime}
               </Text>
             )}
@@ -83,13 +90,13 @@ export const DriverRouteCard: React.FC<DriverRouteCardProps> = ({
         </View>
 
         {/* Live GPS Broadcast Switcher */}
-        <View className="bg-pekon-surface/70 border border-pekon-border rounded-xl p-3 flex-row items-center justify-between">
+        <View className="bg-muted/20 border border-border rounded-xl p-3 flex-row items-center justify-between">
           <View className="flex-1 pr-3">
             <View className="flex-row items-center">
-              <Radio size={14} color={isBroadcastingGps ? '#00F2A9' : '#84958A'} />
-              <Text className="text-white font-bold text-xs ml-1.5">Live Broadcast GPS (15s)</Text>
+              <Radio size={14} color={isBroadcastingGps ? '#10B981' : '#84958A'} />
+              <Text className="text-foreground font-bold text-xs ml-1.5">Live Broadcast GPS (15s)</Text>
             </View>
-            <Text className="text-pekon-muted text-[10px] mt-0.5">
+            <Text className="text-muted-foreground text-[10px] mt-0.5">
               {isBroadcastingGps
                 ? 'Posisi kendaraan Anda otomatis disiarkan ke warga penitip'
                 : 'Aktifkan agar warga dapat memantau kedatangan Anda'}
@@ -98,92 +105,88 @@ export const DriverRouteCard: React.FC<DriverRouteCardProps> = ({
           <Switch
             value={isBroadcastingGps}
             onValueChange={onToggleBroadcast}
-            trackColor={{ false: '#262D30', true: '#00F2A9' }}
-            thumbColor={isBroadcastingGps ? '#0F1416' : '#84958A'}
+            size="md"
           />
         </View>
 
         {/* Tombol Ping Manual */}
-        <TouchableOpacity
-          className="mt-2.5 bg-pekon-surface border border-pekon-border py-2 rounded-xl flex-row items-center justify-center"
+        <Button
+          variant="outline"
+          size="sm"
           onPress={onManualPing}
+          className="mt-2.5 w-full flex-row items-center justify-center"
         >
-          <RefreshCw size={13} color="#00F2A9" />
-          <Text className="text-pekon-primary font-bold text-xs ml-1.5">Perbarui Posisi GPS Sekarang</Text>
-        </TouchableOpacity>
-      </View>
+          <RefreshCw size={12} color="#10B981" />
+          <Text className="text-foreground font-semibold text-xs ml-1.5">Perbarui Posisi GPS Sekarang</Text>
+        </Button>
+      </Card>
 
       {/* Daftar Titipan Masuk dari Warga */}
       <View className="mt-2">
-        <View className="flex-row justify-between items-center mb-2">
-          <Text className="text-white font-semibold text-sm">Pesanan Titipan Masuk</Text>
-          <View className="bg-pekon-card px-2 py-0.5 rounded-full border border-pekon-border">
-            <Text className="text-pekon-primary text-[10px] font-bold">
-              {route.orders?.length || 0} Permintaan
-            </Text>
-          </View>
+        <View className="flex-row justify-between items-center mb-2 px-1">
+          <Text className="text-foreground font-semibold text-sm">Pesanan Titipan Masuk</Text>
+          <Badge variant="outline" size="xs">
+            {route.orders?.length || 0} Permintaan
+          </Badge>
         </View>
 
         {(!route.orders || route.orders.length === 0) ? (
-          <View className="bg-pekon-card border border-pekon-border rounded-xl p-5 items-center my-1">
+          <Card className="bg-card border-border p-5 items-center my-1">
             <PackageCheck size={28} color="#84958A" />
-            <Text className="text-pekon-text font-semibold text-xs mt-2">Belum ada pesanan titipan masuk</Text>
-            <Text className="text-pekon-subtle text-[11px] text-center mt-1">
+            <Text className="text-foreground font-semibold text-xs mt-2">Belum ada pesanan titipan masuk</Text>
+            <Text className="text-muted-foreground text-[11px] text-center mt-1">
               Warga sekitar pekon Anda akan segera melihat rute ini dan mengajukan titipan barang.
             </Text>
-          </View>
+          </Card>
         ) : (
           route.orders.map((order: any) => {
             const isRequested = order.status === 'REQUESTED';
             const isAccepted = order.status === 'ACCEPTED';
 
             return (
-              <View key={order.id} className="bg-pekon-card border border-pekon-border rounded-xl p-3.5 mb-2.5">
-                <View className="flex-row justify-between items-center pb-2 border-b border-pekon-border/60">
+              <Card key={order.id} className="bg-card border-border p-3.5 mb-2.5">
+                <View className="flex-row justify-between items-center pb-2 border-b border-border">
                   <View className="flex-row items-center">
-                    <User size={13} color="#00F2A9" />
-                    <Text className="text-white font-bold text-xs ml-1.5">
+                    <User size={13} color="#10B981" />
+                    <Text className="text-foreground font-bold text-xs ml-1.5">
                       {order.requester?.fullName || 'Warga Penitip'}
                     </Text>
                   </View>
-                  <View className={`px-2 py-0.5 rounded border ${isAccepted ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30'}`}>
-                    <Text className={`text-[10px] font-bold ${isAccepted ? 'text-emerald-400' : 'text-amber-400'}`}>
-                      {isAccepted ? 'TERKUNCI / DITERIMA' : 'MENUNGGU KONFIRMASI'}
-                    </Text>
-                  </View>
+                  <Badge variant={isAccepted ? 'success' : 'warning'} size="xs">
+                    {isAccepted ? 'TERKUNCI / DITERIMA' : 'MENUNGGU KONFIRMASI'}
+                  </Badge>
                 </View>
 
                 <View className="my-2">
-                  <Text className="text-pekon-text text-xs font-semibold">{order.itemDescription}</Text>
+                  <Text className="text-foreground text-xs font-medium">{order.itemDescription}</Text>
                   <View className="flex-row items-center justify-between mt-1.5">
                     <View className="flex-row items-center">
-                      <Fuel size={12} color="#00F2A9" />
-                      <Text className="text-pekon-primary text-xs font-bold ml-1">
+                      <Fuel size={12} color="#10B981" />
+                      <Text className="text-primary text-xs font-bold ml-1">
                         Rp {Number(order.fuelShareCost).toLocaleString('id-ID')}
                       </Text>
-                      <Text className="text-pekon-muted text-[10px] ml-1">(Patungan Bensin)</Text>
+                      <Text className="text-muted-foreground text-[10px] ml-1">(Patungan Bensin)</Text>
                     </View>
                     {order.requester?.phoneNumber && (
                       <View className="flex-row items-center">
                         <Phone size={11} color="#84958A" />
-                        <Text className="text-pekon-muted text-[10px] ml-1">{order.requester.phoneNumber}</Text>
+                        <Text className="text-muted-foreground text-[10px] ml-1">{order.requester.phoneNumber}</Text>
                       </View>
                     )}
                   </View>
                 </View>
 
                 {isRequested && (
-                  <TouchableOpacity
-                    accessible={true}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Terima titipan dari ${order.requester?.fullName || 'warga'}`}
-                    className="mt-1 bg-pekon-primary py-2 rounded-lg items-center"
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="w-full mt-1"
                     onPress={() => onAcceptOrder(order.id, order.requester?.fullName)}
                   >
-                    <Text className="text-pekon-bg font-bold text-xs">Terima Titipan & Kunci Transaksi</Text>
-                  </TouchableOpacity>
+                    Terima Titipan & Kunci Transaksi
+                  </Button>
                 )}
-              </View>
+              </Card>
             );
           })
         )}

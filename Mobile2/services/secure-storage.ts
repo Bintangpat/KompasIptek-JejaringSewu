@@ -8,6 +8,7 @@ export const STORAGE_KEYS = {
   DEVICE_ID: 'jejaring_sewu_device_id',
   ACTIVE_COMMUTER_ROUTE_ID: 'jejaring_sewu_active_commuter_route_id',
   OFFLINE_MUTATION_QUEUE: 'jejaring_sewu_offline_queue',
+  ONBOARDING_COMPLETED: 'jejaring_sewu_onboarding_completed',
 } as const;
 
 export const SecureStorage = {

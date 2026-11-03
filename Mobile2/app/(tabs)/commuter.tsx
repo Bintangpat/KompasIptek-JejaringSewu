@@ -1,15 +1,21 @@
 import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
-  Text,
   ScrollView,
   RefreshControl,
-  ActivityIndicator,
   Alert,
   TouchableOpacity,
 } from 'react-native';
 import { Fuel, Navigation, PlusCircle } from 'lucide-react-native';
 import * as Location from 'expo-location';
+
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Spinner } from '@/components/ui/spinner';
+import { Text } from '@/components/ui/text';
+import { AuthWallSheet } from '@/components/ui/auth-wall-sheet';
+import { useAuthProtection } from '@/hooks/use-auth-protection';
 
 import { useCommuterStore } from '@/features/commuter/store';
 import { commuterApi } from '@/features/commuter/api';
@@ -22,6 +28,13 @@ import {
 } from '@/features/commuter/components';
 
 export default function CommuterScreen() {
+  const {
+    isAuthWallOpen,
+    setIsAuthWallOpen,
+    authWallProps,
+    protectedAction,
+  } = useAuthProtection();
+
   const {
     activeMode,
     setActiveMode,
@@ -236,29 +249,34 @@ export default function CommuterScreen() {
   };
 
   const handleAcceptOrder = async (orderId: string, requesterName?: string) => {
-    Alert.alert(
-      'Konfirmasi Titipan',
-      `Apakah Anda bersedia membawa titipan dari ${requesterName || 'warga'} dan mengunci transaksi patungan bensin?`,
-      [
-        { text: 'Batal', style: 'cancel' },
-        {
-          text: 'Terima Titipan',
-          onPress: async () => {
-            try {
-              await commuterApi.acceptJastipOrder(orderId);
-              Alert.alert('Sukses', 'Titipan jastip diterima! Transaksi telah terkunci.');
-              fetchData();
-            } catch (e: any) {
-              Alert.alert('Gagal', e.message || 'Gagal menerima pesanan.');
-            }
+    protectedAction(() => {
+      Alert.alert(
+        'Konfirmasi Titipan',
+        `Apakah Anda bersedia membawa titipan dari ${requesterName || 'warga'} dan mengunci transaksi patungan bensin?`,
+        [
+          { text: 'Batal', style: 'cancel' },
+          {
+            text: 'Terima Titipan',
+            onPress: async () => {
+              try {
+                await commuterApi.acceptJastipOrder(orderId);
+                Alert.alert('Sukses', 'Titipan jastip diterima! Transaksi telah terkunci.');
+                fetchData();
+              } catch (e: any) {
+                Alert.alert('Gagal', e.message || 'Gagal menerima pesanan.');
+              }
+            },
           },
-        },
-      ]
-    );
+        ]
+      );
+    }, {
+      title: 'Terima Pesanan Jastip',
+      description: 'Masuk dengan akun warga untuk menerima pesanan dan mengunci saldo patungan bensin di buku besar pekon.',
+    });
   };
 
   return (
-    <View className="flex-1 bg-pekon-bg">
+    <View className="flex-1 bg-background">
       <CommuterModeSwitcher
         activeTab={activeMode}
         setActiveTab={setActiveMode}
@@ -275,22 +293,22 @@ export default function CommuterScreen() {
               setRefreshing(true);
               fetchData();
             }}
-            tintColor="#00F2A9"
+            tintColor="#10B981"
           />
         }
       >
         {activeMode === 'warga' ? (
           <View>
             <View className="flex-row justify-between items-center mb-3">
-              <Text className="text-white font-semibold text-sm">Rute Aktif Sekitar Anda</Text>
-              <View className="flex-row space-x-1.5">
+              <Text className="text-foreground font-semibold text-sm">Rute Aktif Sekitar Anda</Text>
+              <View className="flex-row gap-1.5">
                 {[10, 25, 50].map((km) => (
                   <TouchableOpacity
                     key={km}
                     onPress={() => setRadiusKm(km)}
-                    className={`px-2.5 py-1 rounded-full border ${radiusKm === km ? 'bg-pekon-primary/20 border-pekon-primary' : 'bg-pekon-card border-pekon-border'}`}
+                    className={`px-2.5 py-1 rounded-full border ${radiusKm === km ? 'bg-primary/20 border-primary' : 'bg-card border-border'}`}
                   >
-                    <Text className={`text-[10px] font-bold ${radiusKm === km ? 'text-pekon-primary' : 'text-pekon-muted'}`}>
+                    <Text className={`text-[10px] font-bold ${radiusKm === km ? 'text-primary' : 'text-muted-foreground'}`}>
                       {km} km
                     </Text>
                   </TouchableOpacity>
@@ -299,32 +317,46 @@ export default function CommuterScreen() {
             </View>
 
             {loading ? (
-              <ActivityIndicator size="large" color="#00F2A9" className="my-8" />
+              <View className="my-8 items-center">
+                <Spinner size="lg" />
+              </View>
             ) : nearbyRoutes.length === 0 ? (
-              <View className="bg-pekon-card border border-pekon-border rounded-xl p-6 items-center my-4">
+              <Card className="bg-card border-border p-6 items-center my-4">
                 <Fuel size={36} color="#84958A" />
-                <Text className="text-pekon-text font-semibold text-sm mt-3">Belum ada rute komuter aktif</Text>
-                <Text className="text-pekon-subtle text-xs text-center mt-1">
+                <Text className="text-foreground font-semibold text-sm mt-3">Belum ada rute komuter aktif</Text>
+                <Text className="text-muted-foreground text-xs text-center mt-1 leading-relaxed">
                   Belum ada pengemudi searah dalam radius {radiusKm} km. Anda bisa beralih ke tab Kurir untuk membuka rute perjalanan!
                 </Text>
-                <TouchableOpacity
-                  className="mt-4 bg-pekon-primary px-4 py-2 rounded-xl"
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="mt-4"
                   onPress={() => {
-                    setActiveMode('kurir');
-                    setIsCreateRouteModalOpen(true);
+                    protectedAction(() => {
+                      setActiveMode('kurir');
+                      setIsCreateRouteModalOpen(true);
+                    }, {
+                      title: 'Buka Rute Sebagai Kurir',
+                      description: 'Masuk dengan akun warga untuk membuka rute perjalanan dan berbagi bensin dengan warga pekon.',
+                    });
                   }}
                 >
-                  <Text className="text-pekon-bg font-bold text-xs">Buka Rute Sebagai Kurir</Text>
-                </TouchableOpacity>
-              </View>
+                  Buka Rute Sebagai Kurir
+                </Button>
+              </Card>
             ) : (
               nearbyRoutes.map((item) => (
                 <CommuterRouteCard
                   key={item.id}
                   route={item}
                   onOrderPress={(route) => {
-                    setSelectedRouteForOrder(route);
-                    setIsOrderModalOpen(true);
+                    protectedAction(() => {
+                      setSelectedRouteForOrder(route);
+                      setIsOrderModalOpen(true);
+                    }, {
+                      title: 'Titip Barang Jastip Pekon',
+                      description: 'Masuk dengan akun warga agar kurir dapat melihat titik jemput dan mengantarkan barang titipan Anda.',
+                    });
                   }}
                 />
               ))
@@ -333,25 +365,31 @@ export default function CommuterScreen() {
         ) : (
           <View>
             {!activeRoute ? (
-              <View className="bg-pekon-card border border-pekon-border rounded-xl p-5 items-center my-2">
-                <View className="w-14 h-14 rounded-full bg-pekon-primary/10 items-center justify-center mb-3">
-                  <Navigation size={28} color="#00F2A9" />
+              <Card className="bg-card border-border p-5 items-center my-2">
+                <View className="w-14 h-14 rounded-full bg-primary/10 items-center justify-center mb-3">
+                  <Navigation size={28} color="#10B981" />
                 </View>
-                <Text className="text-white font-bold text-base text-center">Anda Belum Membuka Rute Hari Ini</Text>
-                <Text className="text-pekon-muted text-xs text-center mt-1 leading-relaxed">
+                <Text className="text-foreground font-bold text-base text-center">Anda Belum Membuka Rute Hari Ini</Text>
+                <Text className="text-muted-foreground text-xs text-center mt-1 leading-relaxed">
                   Apakah Anda hendak bepergian dari pekon ke pasar atau kantor kota? Buka rute perjalanan Anda untuk membawa titipan barang tetangga dan dapatkan patungan bensin otomatis!
                 </Text>
-                <TouchableOpacity
-                  accessible={true}
-                  accessibilityRole="button"
-                  accessibilityLabel="Buka Perjalanan Komuter Baru"
-                  className="mt-5 bg-pekon-primary px-5 py-2.5 rounded-xl flex-row items-center"
-                  onPress={() => setIsCreateRouteModalOpen(true)}
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="mt-5 w-full flex-row items-center justify-center"
+                  onPress={() => {
+                    protectedAction(() => {
+                      setIsCreateRouteModalOpen(true);
+                    }, {
+                      title: 'Buka Rute Perjalanan Baru',
+                      description: 'Masuk dengan akun warga untuk membuka rute perjalanan komuter dan menyiarkan GPS searah.',
+                    });
+                  }}
                 >
-                  <PlusCircle size={16} color="#0F1416" />
-                  <Text className="text-pekon-bg font-bold text-xs ml-1.5">Buka Rute Perjalanan Baru</Text>
-                </TouchableOpacity>
-              </View>
+                  <PlusCircle size={16} color="#FFFFFF" />
+                  <Text className="text-primary-foreground font-bold text-xs ml-1.5">Buka Rute Perjalanan Baru</Text>
+                </Button>
+              </Card>
             ) : (
               <DriverRouteCard
                 route={activeRoute}
@@ -381,6 +419,12 @@ export default function CommuterScreen() {
         onClose={() => setIsOrderModalOpen(false)}
         onSubmit={handleSendOrder}
         submitting={submittingOrder}
+      />
+
+      <AuthWallSheet
+        open={isAuthWallOpen}
+        onOpenChange={setIsAuthWallOpen}
+        {...authWallProps}
       />
     </View>
   );

@@ -1,0 +1,552 @@
+---
+title: Installation
+description: Install PanelUI in an Expo app — a new one in a single command, an existing one in six steps, with a fix for every error you might hit.
+---
+
+There are two ways in, and which one you want depends on whether the app exists yet.
+
+## Requirements
+
+- **Expo SDK 57 or 58**, with React Native 0.86 or 0.88. The example app and the templates are on SDK 58.
+- **Node 20+**.
+- No Xcode, no Android Studio, no `prebuild`. PanelUI is pure TypeScript with no native modules,
+  so it runs in Expo Go.
+- Let `expo install` choose the versions. Setting `react-native` by hand in `package.json` is the
+  usual cause of [`Cannot find native module`](/docs/troubleshooting#cannot-find-native-module-expoasset)
+  at startup — the SDK decides which React Native goes with it.
+
+## Option 1: a new project
+
+One command. It writes a working Expo app with everything on this page already done — the Metro
+pipeline, the CSS entry, the provider, a theme, and a screen with components on it:
+
+<InstallTabs kind="create" packages="create-panelui-app" />
+
+It asks which template you want (`starter` or `minimal`), what the app is called, and which
+theme to start on; pass `--template`, `--name`, `--theme` and `--yes` to answer in advance. See
+[Templates](/docs/templates) for what each one contains.
+
+That is the whole of it — skip to [Restart and check](#6-restart-and-check) to see it running.
+
+## Option 2: an existing project
+
+Six steps. PanelUI needs the **package**, its **peer dependencies**, a **Metro plugin**, a **CSS
+entry file** and the **provider** at the root of your app.
+
+If something does not work at the end of it, [Troubleshooting](#troubleshooting) lists the errors
+people actually hit and the fix for each — it is worth a look before you retrace your steps.
+
+<Callout>
+  This page installs the whole library as a dependency. If you would rather copy a single
+  component's **source** into your project and own it, see the [CLI](/docs/cli) — both are
+  supported, and you can mix them.
+</Callout>
+
+No app yet, and you would rather not use the template? Make one first, and come back:
+
+<InstallTabs kind="create" packages="create-expo-app" />
+
+## 1. Install PanelUI
+
+<InstallTabs kind="expo" packages="panelui-native" />
+
+`tailwind-variants`, `tailwind-merge` and `clsx` are real dependencies of the package and arrive
+with it. The next step is the ones that cannot.
+
+## 2. Install the peer dependencies
+
+These are peer dependencies rather than dependencies because your app has to own the versions —
+one copy of Reanimated per app, matched to your SDK. Install all nine:
+
+<InstallTabs
+  kind="expo"
+  packages="uniwind tailwindcss react-native-reanimated react-native-worklets react-native-gesture-handler react-native-safe-area-context react-native-svg @react-native-masked-view/masked-view expo-linear-gradient"
+/>
+
+<Callout type="warn" title="Install all of them, including the ones you think you don't need">
+  Metro resolves every import in the library when it builds your bundle, not when you first render
+  a component. Leave one out and the **first bundle fails** with `Unable to resolve module …` — for
+  a component you may never use.
+</Callout>
+
+<Callout title="Why `expo install` and not a pinned version">
+  `expo install` asks the installed SDK which version of each package it was built against, so
+  these resolve to versions that work together on *your* SDK. Pinning them by hand produces the
+  version mismatch the pinning was meant to prevent, one SDK upgrade later. The floors below are
+  what the package requires; the SDK picks the rest.
+</Callout>
+
+| Package                                 | Minimum | Why                                                                                    |
+| --------------------------------------- | ------- | -------------------------------------------------------------------------------------- |
+| `uniwind`                               | 1.0.0   | The Tailwind engine — compiles the classes and applies theme changes natively          |
+| `tailwindcss`                           | 4.0.0   | The v4 engine Uniwind builds on                                                        |
+| `react-native-reanimated`               | 3.0.0   | Every animation in the library, on the UI thread                                       |
+| `react-native-worklets`                 | —       | Reanimated 4's own runtime. Not PanelUI's peer; it is here because Reanimated needs it |
+| `react-native-gesture-handler`          | 2.0.0   | Sheets, sliders, swipes, the colour picker                                             |
+| `react-native-safe-area-context`        | 4.0.0   | Insets for overlays and the provider's background                                      |
+| `react-native-svg`                      | 15.0.0  | Charts, signature, loaders, icons                                                      |
+| `@react-native-masked-view/masked-view` | 0.3.0   | Shimmer, scroll fades, text animation                                                  |
+| `expo-linear-gradient`                  | 13.0.0  | Gradients in charts, scrims and fades                                                  |
+
+### Optional dependencies
+
+Each of these is reached through a guarded import, so the library works without it and the
+feature simply stays quiet. Install one when you want what it unlocks.
+
+| Package                                      | Unlocks                                                                                                                                 |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `expo-haptics`                               | The `haptics` prop on Switch, Slider, Chip, Rating, ToggleButton, NumberInput and SectionRail                                           |
+| `expo-blur`                                  | The blurred backdrop behind Dialog, BottomSheet and Popover                                                                             |
+| `expo-clipboard`                             | [`useCopyToClipboard`](/docs/hooks/use-copy-to-clipboard)                                                                               |
+| `react-native-keyboard-controller`           | Keyboard avoidance that behaves on Android — `avoidKeyboard` on Input, and [`useKeyboardAvoidance`](/docs/hooks/use-keyboard-avoidance) |
+| `expo-file-system`, `react-native-view-shot` | Exporting a [Signature](/docs/components/signature) as a file or an image                                                               |
+| `@expo/ui`                                   | [Native platform controls](/docs/native) behind Button, Switch, Slider, Select and BottomSheet                                          |
+| `@maplibre/maplibre-react-native`            | The [Map](/docs/components/map) component                                                                                               |
+
+## 3. Add `metro.config.js`
+
+Uniwind compiles your Tailwind classes at bundle time, so it has to wrap the Metro config.
+
+<Callout type="warn" title="Where this file goes">
+  In the **root of your project — the folder that holds `package.json`**. Not in `app/`, not in
+  `src/`. A `metro.config.js` anywhere else is silently ignored, and every class you write does
+  nothing.
+</Callout>
+
+A fresh Expo app has no `metro.config.js`. Generate one:
+
+```bash
+npx expo customize metro.config.js
+```
+
+Then wrap the config it wrote:
+
+```js title="metro.config.js"
+const { getDefaultConfig } = require('expo/metro-config')
+const { withUniwindConfig } = require('uniwind/metro')
+
+const config = getDefaultConfig(__dirname)
+
+module.exports = withUniwindConfig(config, {
+  cssEntryFile: './src/global.css',
+  dtsFile: './uniwind-types.d.ts',
+  // Only needed to switch to the Moon or Grass themes at runtime.
+  extraThemes: ['moon', 'moon-dark', 'grass', 'grass-dark'],
+})
+```
+
+<Callout type="warn" title="`cssEntryFile` must be the real path to your CSS file">
+  `./src/global.css` above is where `create-expo-app` puts it, which is why it is what this snippet
+  says. If yours is at the project root, change it to `'./global.css'`.
+
+Nothing checks this path. Point it at a file that does not exist and Metro still bundles, the app
+still launches, and **not one class resolves** — no `flex-1`, so views collapse to nothing and you
+get a blank screen, with Uniwind warning that it cannot find `--color-background`. Step 4 ends by
+asking you to check this line against the file you actually edited; it is worth doing.
+</Callout>
+
+`cssEntryFile` and `dtsFile` are relative to **this file**.
+
+<Callout title="In a monorepo">
+  `metro.config.js` belongs in the *app's* folder — the one with the app's own `package.json`, not
+  the workspace root — and needs to be told where the workspace is:
+
+```js title="apps/mobile/metro.config.js"
+const path = require('path')
+
+const projectRoot = __dirname
+const workspaceRoot = path.resolve(projectRoot, '../..')
+
+const config = getDefaultConfig(projectRoot)
+config.watchFolders = [workspaceRoot]
+config.resolver.nodeModulesPaths = [
+  path.resolve(projectRoot, 'node_modules'),
+  path.resolve(workspaceRoot, 'node_modules'),
+]
+```
+
+</Callout>
+
+## 4. Add the imports to `global.css`
+
+<Callout type="warn" title="Look for this file before you create one">
+  An app made by `create-expo-app` **already has `src/global.css`** — a handful of web font
+  variables, imported from `src/constants/theme.ts`. Add PanelUI's imports to the top of that file
+  and leave what is already in it below. Creating a second `global.css` at the project root gives
+  you two CSS entries, one of which Uniwind never compiles, and nothing will be styled.
+</Callout>
+
+```css title="src/global.css"
+@import 'tailwindcss';
+@import 'uniwind';
+@import 'panelui-native/theme.css';
+
+@source '../node_modules/panelui-native/src';
+
+/* whatever was already in the file stays here */
+```
+
+The first three lines bring in Tailwind, Uniwind's native layer, and PanelUI's design tokens. The
+`@source` line tells Tailwind to scan PanelUI's own class names so its styles end up in your
+bundle — without it your classes work and PanelUI's components come out unstyled.
+
+**Now go back and check `cssEntryFile` in step 3 names this exact file.** `'./src/global.css'` for
+the file above — the default in the snippet, since that is where `create-expo-app` puts it. If you
+kept your CSS somewhere else, this is the line that has to change, and a mismatch is silent.
+
+<Callout type="warn" title="`@source` is relative to the CSS file, not to the project">
+  This is the single most common mistake, and the reason the example above says `../`. Whatever the
+  path, it has to land on `node_modules/panelui-native/src`:
+
+| The CSS file lives in                         | `@source`                                 |
+| --------------------------------------------- | ----------------------------------------- |
+| `src/` — where `create-expo-app` puts it      | `'../node_modules/panelui-native/src'`    |
+| the project root                              | `'./node_modules/panelui-native/src'`     |
+| `src/styles/`                                 | `'../../node_modules/panelui-native/src'` |
+| `apps/mobile/` in a monorepo, hoisted install | `'../../node_modules/panelui-native/src'` |
+
+</Callout>
+
+## 5. Import the CSS and add the provider
+
+The import goes in your app's entry file, once, at the top — it is what pulls the compiled styles
+into the bundle. `PanelUIProvider` wraps everything below it.
+
+<Callout type="warn" title="There is probably no `App.tsx`">
+  The default template uses Expo Router with the routes under `src/`, so the entry is
+  **`src/app/_layout.tsx`**. `npx expo customize` prints which folder it is using — *Using src/app
+  as the root directory for Expo Router* — if you want to check. Older templates keep routes in
+  `app/`, and a non-router app has `App.tsx`; the file to edit is whichever of those you have.
+</Callout>
+
+<Tabs items={['Expo Router', 'App.tsx']}>
+
+<Tab value="Expo Router">
+
+The template's `_layout.tsx` already returns a navigation `ThemeProvider`, so wrap what is there
+rather than replacing it — and note the CSS import is `'../global.css'`, since the file sits one
+level above `src/app/`:
+
+```tsx title="src/app/_layout.tsx"
+import '../global.css'
+
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router'
+import { useColorScheme } from 'react-native'
+import { PanelUIProvider } from 'panelui-native'
+
+import AppTabs from '@/components/app-tabs'
+
+export default function RootLayout() {
+  const colorScheme = useColorScheme()
+
+  return (
+    <PanelUIProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <AppTabs />
+      </ThemeProvider>
+    </PanelUIProvider>
+  )
+}
+```
+
+That navigation theme paints its own background over every screen, which will fight PanelUI's once
+you start switching themes — [Using Expo Router](#using-expo-router) below replaces it with one fed
+from the live tokens. Worth doing straight away if you plan to offer dark mode.
+
+</Tab>
+
+<Tab value="App.tsx">
+
+```tsx title="App.tsx"
+import './global.css'
+import { PanelUIProvider } from 'panelui-native'
+
+export default function App() {
+  return <PanelUIProvider>{/* your app */}</PanelUIProvider>
+}
+```
+
+</Tab>
+
+</Tabs>
+
+`PanelUIProvider` owns four things: the gesture handler root, the themed page background, the
+portal host used by overlays (Dialog, BottomSheet, Select), and the toast viewport. One at the
+root of the app is enough — do not nest a second one.
+
+It does not own the system bars. Drive those from the theme yourself — see
+[Using Expo Router](#using-expo-router) for the two lines that do it.
+
+You do **not** need a `babel.config.js`. Expo's default preset already wires up the worklets
+plugin that Reanimated needs. If you have one for other reasons, keep `babel-preset-expo` in it.
+
+## 6. Restart and check
+
+Metro reads its config once, at startup, so start it fresh:
+
+```bash
+npx expo start --clear
+```
+
+Then drop this on a screen — `src/app/index.tsx` in a fresh app:
+
+```tsx
+import { Button } from 'panelui-native/components/button'
+import { Card } from 'panelui-native/components/card'
+import { View } from 'react-native'
+
+export default function Home() {
+  return (
+    <View className='flex-1 justify-center bg-background p-6'>
+      <Card>
+        <Card.Header>
+          <Card.Title>It works</Card.Title>
+          <Card.Description>PanelUI is installed and themed.</Card.Description>
+        </Card.Header>
+        <Card.Footer>
+          <Button onPress={() => {}}>Press me</Button>
+        </Card.Footer>
+      </Card>
+    </View>
+  )
+}
+```
+
+You should see a themed page background, a card with a border and radius, and a button that dips
+when you press it. Unstyled text on a white screen means the styles are not reaching the bundle —
+start at the top of [Troubleshooting](#troubleshooting).
+
+<Callout type="warn" title="Restart after every config change">
+  `metro.config.js`, `global.css` and `extraThemes` are all read at startup. A dev server started
+  before you edited them keeps the old values in memory — and for `extraThemes` it will rewrite
+  Uniwind's generated CSS with the stale list, producing `Theme … is missing variable …` or
+  `Cannot use @variant with unknown variant`. Stop the server and start it again; `--clear` on a
+  running one is not enough.
+</Callout>
+
+## Two ways to import
+
+Both of these work, and they resolve to the same component:
+
+```tsx
+import { Button } from 'panelui-native' // the root
+import { Button } from 'panelui-native/components/button' // the subpath
+```
+
+The root entry re-exports all 120 components, and Metro does not tree-shake — so importing one
+name from it loads every component and everything they import. The subpath loads that component
+alone.
+
+On a desktop simulator you will not notice. On an Android device, or in Expo Go, the difference is
+large enough to matter: the whole library evaluates before your first screen paints, which on a
+device under memory pressure is enough for the OS to end the process with nothing in the terminal.
+If that is what you are seeing, [Troubleshooting](/docs/troubleshooting#the-app-closes-on-android-with-no-error)
+has the rest of it.
+
+The subpath is the component's URL slug, and the other three you will want are named:
+
+```tsx
+import { PanelUIProvider } from 'panelui-native/provider'
+import { useThemeMode, PANEL_THEMES } from 'panelui-native/theme'
+import { Text } from 'panelui-native/primitives/text'
+import { ChevronLeftIcon } from 'panelui-native/icons'
+import { BottomSheet } from 'panelui-native/components/bottom-sheet'
+```
+
+Use the root while you are trying things out; move to subpaths for anything you ship.
+
+## Using Expo Router
+
+React Navigation paints its own theme background over every screen, and it defaults to an opaque
+light grey. That sits on top of `PanelUIProvider`'s background and makes theme switching look
+like it does nothing. Feed it the live PanelUI tokens instead:
+
+```tsx title="src/app/_layout.tsx"
+import '../global.css'
+
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router'
+import { useCSSVariable } from 'uniwind'
+import { PanelUIProvider, useThemeMode } from 'panelui-native'
+
+function ThemedNavigation() {
+  const { mode } = useThemeMode()
+  const [background, card, text, border] = useCSSVariable([
+    '--color-background',
+    '--color-card',
+    '--color-foreground',
+    '--color-border',
+  ]) as (string | undefined)[]
+
+  const base = mode === 'dark' ? DarkTheme : DefaultTheme
+
+  return (
+    <ThemeProvider
+      value={{
+        ...base,
+        dark: mode === 'dark',
+        colors: { ...base.colors, background, card, text, border },
+      }}
+    >
+      <Stack />
+    </ThemeProvider>
+  )
+}
+
+export default function RootLayout() {
+  return (
+    <PanelUIProvider>
+      <ThemedNavigation />
+    </PanelUIProvider>
+  )
+}
+```
+
+`useCSSVariable` subscribes to Uniwind's theme changes, so this re-runs on every switch —
+including the named themes, which the OS `Appearance` API knows nothing about. For the same
+reason, drive `<StatusBar>` from `mode` rather than `style="auto"`.
+
+### Paint the window too, on Android
+
+The theme reaches everything React draws. It does not reach the window behind that, and on
+Android that window is what shows in every strip the app is not painting — behind the status
+bar, under the navigation bar, and in the gap a screen transition opens. Left alone it stays
+the device's colour, so a dark PanelUI theme on a phone set to light has light bands at both
+ends.
+
+Set it from the same token, with [`expo-system-ui`](https://docs.expo.dev/versions/latest/sdk/system-ui/):
+
+```tsx
+import * as SystemUI from 'expo-system-ui'
+
+useEffect(() => {
+  if (background) void SystemUI.setBackgroundColorAsync(background)
+}, [background])
+```
+
+### If the keyboard measures against the wrong inset
+
+`PanelUIProvider` takes `statusBarTranslucent` and `navigationBarTranslucent` and hands them
+to the keyboard controller, which needs them to know how much of the window the system bars
+are covering.
+
+Reach for them only where the app draws under a system bar without being edge-to-edge. Under
+edge-to-edge — the default from Expo SDK 54 — the controller works this out for itself and
+ignores both, so leave them unset there rather than passing `false`: a value it has to ignore
+is a warning in development.
+
+```tsx
+<PanelUIProvider statusBarTranslucent navigationBarTranslucent>
+```
+
+## TypeScript
+
+Uniwind generates `uniwind-types.d.ts` on the first bundle, which types `className` and your
+registered themes. Commit it, or add it to `.gitignore` and let it regenerate — either is fine, as
+long as it is covered by your `tsconfig.json` `include`.
+
+## Troubleshooting
+
+Everything here is about getting the first bundle to build and the first screen to paint. For an
+app that installs cleanly and then crashes, closes on Android, or reports a missing native module,
+see [Troubleshooting](/docs/troubleshooting).
+
+### `Unable to resolve module @react-native-masked-view/masked-view` (or `expo-linear-gradient`)
+
+A required package is missing. Run the [peer dependencies](#2-install-the-peer-dependencies) again — all of
+it, not just the package named in the error. Metro resolves every import in the library, so this
+happens even for components you do not use.
+
+### `Uniwind - We couldn't find your variable --color-background`
+
+Your `cssEntryFile` does not point at the CSS file you edited, so Uniwind compiled nothing. In an
+app from `create-expo-app` the file is `src/global.css`, so the line reads:
+
+```js title="metro.config.js"
+cssEntryFile: './src/global.css',
+```
+
+The warning names a variable, which makes it look like a token problem, but no token in the file was
+compiled — and no class either, which is the same reason the screen is blank: without `flex-1` the
+views have no height. Fix the path and restart the dev server.
+
+### Nothing is styled — `className` does nothing at all
+
+Work down this list; it is almost always the first item:
+
+1. `metro.config.js` is not in the project root, next to `package.json`.
+2. It does not wrap the config in `withUniwindConfig`, or does not export the wrapped result.
+3. `cssEntryFile` does not point at your CSS file, relative to `metro.config.js`. In a fresh app
+   that file is `src/global.css`, not `global.css`.
+4. There are **two** CSS files — the one the template shipped in `src/` and one you created at the
+   root. Only the one named by `cssEntryFile` is compiled. Keep a single file.
+5. `import './global.css'` is missing from the app's entry file, or points at the wrong path. From
+   `src/app/_layout.tsx` it is `'../global.css'`.
+6. The dev server was running when you changed one of those. Stop it and run
+   `npx expo start --clear`.
+
+### `Cannot use @variant with unknown variant: moon` when building
+
+Fixed in **0.22.5** — upgrade with `npx expo install panelui-native`.
+
+Before that release the Moon and Grass token blocks relied on variants that only existed in the
+artifact Uniwind generates from your Metro config, which produced a build that worked in the dev
+server and failed in `npx expo export` and on EAS. The theme file now declares those variants
+itself, so both paths compile the same way and `extraThemes` is only about switching themes at
+runtime.
+
+### My own classes work, but PanelUI's components are unstyled
+
+The `@source` line in `global.css` is missing, or its relative path does not land on
+`node_modules/panelui-native/src`. See
+[the table in step 4](#4-add-the-imports-to-globalcss) — the path is relative to the CSS file, not
+to the project root.
+
+### `Theme … is missing variable …`
+
+A stale dev server rewrote Uniwind's generated CSS using the old `extraThemes` list. Stop it
+completely and start it again with `--clear`.
+
+### `setTheme('moon')` throws that the theme "was not registered"
+
+Named themes have to be listed in `extraThemes` in `metro.config.js`, and the server restarted
+after adding them. See [Theming](/docs/customization/theming).
+
+### `className` is a type error, or has no autocomplete
+
+`uniwind-types.d.ts` is generated on the first successful bundle. Run the app once, then check the
+file exists where `dtsFile` says it should and that `tsconfig.json` includes it.
+
+### The app builds but overlays never appear
+
+Dialog, BottomSheet and Select render into the portal host that `PanelUIProvider` sets up. Make
+sure the provider is at the root of the app and wraps the screen you are opening the overlay from.
+
+### Text keeps its default colour
+
+A label that stays near-white in dark mode, or near-black in light, after you have given it a
+colour usually has one of three causes.
+
+**The class is on a view, not on the text.** React Native does not pass a text colour down from a
+view, so `text-*` in a row's `className`, or `color` in its `style`, never reaches the text inside
+it. Colour the text itself: `labelClassName` on `RadioGroup.Item` and `Checkbox`, `className` on
+`Item.Title`.
+
+**The colour is the default one.** In the default theme `text-primary` resolves to the same value
+as `text-foreground`, so it changes nothing you can see. See
+[Colors](/docs/customization/colors#actions-and-state).
+
+**The token was redefined outside a `@variant` block.** A `--color-primary` set in `@theme` or in a
+bare `:root` is replaced at runtime by the active theme's own value. Redefine it once per theme, as
+[Changing a colour](/docs/customization/colors#changing-a-colour) shows.
+
+Still stuck? [Open an issue](https://github.com/panel-ui/PanelUI/issues) with your
+`metro.config.js`, your `global.css` and the error — that is usually enough to spot it.
+
+## Next steps
+
+<Cards>
+  <Card title="Customization" href="/docs/customization/colors" />
+  <Card title="Fonts" href="/docs/customization/fonts" />
+  <Card title="Components" href="/docs/components" />
+  <Card title="CLI" href="/docs/cli" />
+</Cards>
