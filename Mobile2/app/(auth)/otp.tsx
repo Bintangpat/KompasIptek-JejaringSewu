@@ -92,8 +92,8 @@ export default function OtpScreen() {
             <KeyRound size={32} color="#00F2A9" />
           </View>
           <Text className="text-foreground font-black text-2xl">Verifikasi OTP</Text>
-          <Text className="text-muted-foreground text-xs text-center mt-1 px-4">
-            Masukkan 6 digit kode verifikasi yang dikirimkan ke {identifier}
+          <Text className="text-muted-foreground text-xs text-center mt-1 px-4 leading-relaxed">
+            Masukkan 6 digit kode yang dikirimkan via Notifikasi Push HP ke {identifier}. Jika notifikasi tidak muncul, periksa kotak masuk atau spam email Anda.
           </Text>
         </View>
 
@@ -124,7 +124,7 @@ export default function OtpScreen() {
             <View className="bg-popover border border-border p-3 rounded-xl w-full mt-2">
               <Text className="text-muted-foreground text-[11px] text-center leading-relaxed">
                 <Text className="font-bold text-primary">Mode Simulasi Backend:</Text> Pada terminal
-                NestJS, periksa log outbox FCM provider untuk membaca kode OTP 6-digit yang dihasilkan.
+                NestJS, periksa log FCM provider atau Resend email provider untuk membaca kode OTP 6-digit.
               </Text>
             </View>
           </Card.Content>

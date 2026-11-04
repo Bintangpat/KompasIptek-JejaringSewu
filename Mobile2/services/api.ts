@@ -18,6 +18,7 @@ export const apiClient: AxiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
     Accept: "application/json",
+    "X-Client-Platform": "mobile",
   },
 });
 
@@ -25,6 +26,10 @@ export const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     try {
+      if (config.headers) {
+        config.headers['X-Client-Platform'] = 'mobile';
+      }
+
       // 1. Inject Access Token
       const token = await SecureStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
       if (token && config.headers) {

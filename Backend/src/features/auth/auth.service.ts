@@ -109,6 +109,9 @@ export class AuthService {
           payload: {
             userId: user.id,
             phoneNumber: dto.phoneNumber,
+            email: dto.email || user.email || null,
+            fcmToken: user.fcmToken || null,
+            platform: dto.platform || 'mobile',
             purpose: 'REGISTRATION',
             otpCode, // Dalam dev/testing, disimpan di event outbox
           },
@@ -120,7 +123,9 @@ export class AuthService {
         fullName: user.fullName,
         phoneNumber: user.phoneNumber,
         message:
-          'Registrasi berhasil. Kode OTP verifikasi dikirimkan ke perangkat Anda.',
+          dto.platform === 'web'
+            ? 'Registrasi berhasil. Kode OTP verifikasi dikirimkan ke email Anda.'
+            : 'Registrasi berhasil. Kode OTP verifikasi dikirimkan ke perangkat Anda.',
       };
     });
   }
@@ -235,14 +240,20 @@ export class AuthService {
         payload: {
           userId: user.id,
           phoneNumber: user.phoneNumber,
+          email: user.email || null,
+          fcmToken: user.fcmToken || null,
+          platform: dto.platform || 'mobile',
           purpose: dto.purpose,
           otpCode,
         },
       },
     });
 
+    const isWeb = dto.platform === 'web';
     return {
-      message: 'Kode OTP telah berhasil dikirimkan via FCM Push Notification.',
+      message: isWeb
+        ? 'Kode OTP telah berhasil dikirimkan ke alamat email Anda.'
+        : 'Kode OTP telah dikirimkan via Notifikasi Push (FCM) ke perangkat Anda (dengan email fallback jika notifikasi tidak aktif).',
     };
   }
 
@@ -289,10 +300,14 @@ export class AuthService {
   }
 
   // 6. Inisiasi Lupa Sandi
-  async initiateForgotPassword(identifier: string) {
+  async initiateForgotPassword(
+    identifier: string,
+    platform?: 'mobile' | 'web',
+  ) {
     return this.generateAndSendOtp({
       identifier,
       purpose: 'FORGOT_PASSWORD',
+      platform,
     });
   }
 

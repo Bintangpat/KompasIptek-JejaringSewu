@@ -60,6 +60,11 @@ export class RegisterDto {
   @IsEnum(VulnerabilityStatus, { each: true })
   @IsOptional()
   vulnerabilityFlags?: VulnerabilityStatus[];
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['mobile', 'web'], { message: 'Platform harus mobile atau web' })
+  platform?: 'mobile' | 'web';
 }
 
 export class GoogleLoginDto {
@@ -84,6 +89,11 @@ export class SendOtpDto {
     message: 'Tujuan pengiriman OTP tidak valid',
   })
   purpose: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['mobile', 'web'], { message: 'Platform harus mobile atau web' })
+  platform?: 'mobile' | 'web';
 }
 
 export class VerifyOtpDto {

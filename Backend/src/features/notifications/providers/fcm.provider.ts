@@ -101,6 +101,10 @@ export class FcmProvider {
     otpCode: string;
     token?: string;
   }) {
+    if (!payload.token || payload.token.trim().length === 0) {
+      throw new Error('Token perangkat FCM tidak ditemukan pada profil pengguna.');
+    }
+
     const title = 'Kode Verifikasi JEJARING-SEWU';
     const body = `Kode OTP Anda adalah: ${payload.otpCode}. Jangan berikan kode ini kepada siapa pun. Berlaku 5 menit.`;
 

@@ -528,6 +528,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     justifyContent: 'center',
   },
+  blockDaftar: {
+    gap: 12,
+  },
   ctaBlock: {
     gap: 12,
   },

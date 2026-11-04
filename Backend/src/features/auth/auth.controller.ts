@@ -37,8 +37,12 @@ export class AuthController {
 
   @Public()
   @Post('register')
-  async register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(@Body() dto: RegisterDto, @Req() req: Request) {
+    const platform =
+      dto.platform ||
+      (req.headers['x-client-platform'] as 'mobile' | 'web') ||
+      'mobile';
+    return this.authService.register({ ...dto, platform });
   }
 
   @Public()
@@ -83,8 +87,12 @@ export class AuthController {
   @Throttle({ medium: { limit: 3, ttl: 300000 } })
   @Post('otp/send')
   @HttpCode(HttpStatus.OK)
-  async sendOtp(@Body() dto: SendOtpDto) {
-    return this.authService.generateAndSendOtp(dto);
+  async sendOtp(@Body() dto: SendOtpDto, @Req() req: Request) {
+    const platform =
+      dto.platform ||
+      (req.headers['x-client-platform'] as 'mobile' | 'web') ||
+      'mobile';
+    return this.authService.generateAndSendOtp({ ...dto, platform });
   }
 
   @Public()
@@ -98,8 +106,12 @@ export class AuthController {
   @Throttle({ medium: { limit: 3, ttl: 300000 } })
   @Post('password/forgot')
   @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() dto: SendOtpDto) {
-    return this.authService.initiateForgotPassword(dto.identifier);
+  async forgotPassword(@Body() dto: SendOtpDto, @Req() req: Request) {
+    const platform =
+      dto.platform ||
+      (req.headers['x-client-platform'] as 'mobile' | 'web') ||
+      'web';
+    return this.authService.initiateForgotPassword(dto.identifier, platform);
   }
 
   @Public()
